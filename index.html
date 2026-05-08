@@ -12,17 +12,20 @@
         .hidden { display: none; }
         .active-tab { border-bottom: 2px solid #a78bfa; color: #a78bfa; font-weight: bold; }
         input, select { background: #000 !important; border: 1px solid #2d2944 !important; }
-        .loading { opacity: 0.5; pointer-events: none; cursor: not-allowed; }
+        /* Animasi loading sederhana */
+        .loading { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body class="flex flex-col items-center p-4">
 
     <div id="auth-section" class="w-full max-w-md bg-gray-900 mt-10 p-8 rounded-3xl border border-purple-500/30 shadow-2xl">
         <h2 class="text-3xl font-extrabold text-center mb-6 text-purple-400 italic">BEAST PANEL</h2>
+        
         <div class="flex mb-6 border-b border-gray-800">
             <button id="login-tab" onclick="switchAuth('login')" class="flex-1 pb-3 active-tab">LOG MASUK</button>
             <button id="register-tab" onclick="switchAuth('register')" class="flex-1 pb-3 text-gray-500">DAFTAR</button>
         </div>
+
         <div class="space-y-4">
             <input id="auth-user" type="text" placeholder="Username" class="w-full p-4 rounded-xl text-white outline-none focus:border-purple-500">
             <input id="auth-pass" type="password" placeholder="Password" class="w-full p-4 rounded-xl text-white outline-none focus:border-purple-500">
@@ -44,20 +47,23 @@
 
         <div class="bg-gray-900 p-6 rounded-3xl border border-purple-500/30 space-y-5 shadow-lg">
             <h4 class="font-bold text-purple-300 uppercase text-sm tracking-widest text-center">Pesan Likes Automatik</h4>
+            
             <div>
                 <label class="text-xs text-gray-500 ml-1">PLAYER ID (UID)</label>
                 <input id="target-uid" type="text" placeholder="Masukkan UID" class="w-full p-4 rounded-xl text-white mt-1">
             </div>
+
             <div>
                 <label class="text-xs text-gray-500 ml-1">PILIH PAKEJ</label>
                 <select id="package-select" class="w-full p-4 rounded-xl text-white mt-1"></select>
             </div>
+
             <button id="order-btn" onclick="orderProcess()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-2xl font-black text-lg shadow-lg shadow-purple-500/20 transition-all">PESAN SEKARANG</button>
             <p id="status-msg" class="text-center text-sm font-medium mt-2 min-h-[24px]"></p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mt-4">
-            <button onclick="window.open('https://wa.me/601165406482?text=Nak+Topup')" class="bg-green-600 hover:bg-green-700 p-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all">
+            <button onclick="window.open('https://wa.me/601162406482?text=Nak+Topup')" class="bg-green-600 hover:bg-green-700 p-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all">
                 <span>➕ TOPUP</span>
             </button>
             <button onclick="location.reload()" class="bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl font-bold text-gray-300 transition-all">LOGOUT</button>
@@ -65,6 +71,7 @@
     </div>
 
     <script>
+        // Konfigurasi Supabase
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"; 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -81,6 +88,7 @@
             { name: "10,000 Likes", price: 45.00 }
         ];
 
+        // Masukkan pakej ke dalam dropdown
         const pkgSelect = document.getElementById('package-select');
         packages.forEach((pkg, i) => {
             let opt = document.createElement('option');
@@ -102,26 +110,32 @@
             const btn = document.getElementById('auth-btn');
 
             if(!u || !p) return alert("Sila isi Username dan Password!");
+
             btn.disabled = true;
             btn.innerText = "Sila Tunggu...";
 
             try {
                 if(mode === 'register') {
                     const { error } = await _supabase.from(TABLE_NAME).insert([{username: u, password: p, balance: 0}]);
-                    if(error) throw new Error("Username sudah wujud!");
-                    alert("Pendaftaran Berjaya!");
+                    if(error) throw new Error("Username sudah wujud atau ralat rangkaian!");
+                    alert("Pendaftaran Berjaya! Sila log masuk.");
                     switchAuth('login');
                 } else {
                     const { data, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', u).eq('password', p).maybeSingle();
-                    if(error || !data) throw new Error("Username/Password salah!");
+                    if(error || !data) throw new Error("Username atau Password salah!");
+                    
                     currentUser = data;
                     document.getElementById('auth-section').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
                     document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
                 }
-            } catch (err) { alert(err.message); }
-            finally { btn.disabled = false; btn.innerText = mode === 'login' ? 'LOG MASUK' : 'DAFTAR AKAUN'; }
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = mode === 'login' ? 'LOG MASUK' : 'DAFTAR AKAUN';
+            }
         }
 
         async function orderProcess() {
@@ -131,54 +145,63 @@
             const btn = document.getElementById('order-btn');
 
             if(!uid) return alert("Masukkan UID!");
+            if(!currentUser) return location.reload();
+
             btn.disabled = true;
             btn.classList.add('loading');
-            status.innerText = "⏳ Menyambung ke pelayan...";
+            status.innerText = "⏳ Memproses data...";
             status.style.color = "#a78bfa";
 
             try {
-                const { data: user } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
-                if(user.balance < pkg.price) {
+                // Ambil baki terkini dari DB
+                const { data: user, error: fErr } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
+                if(fErr || user.balance < pkg.price) {
                     status.innerText = "❌ Baki Tidak Cukup!";
                     status.style.color = "#ef4444";
                     return;
                 }
 
-                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
+                // Senarai Proxy (Guna backup jika satu sangkut)
                 const proxies = [
                     `https://api.allorigins.win/get?url=`,
-                    `https://thingproxy.freeboard.io/fetch/`,
                     `https://corsproxy.io/?`
                 ];
 
                 let apiResponse = null;
+                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
+
                 for (let proxy of proxies) {
                     try {
                         const res = await fetch(proxy + encodeURIComponent(targetUrl));
-                        const rawData = await res.json();
-                        apiResponse = typeof rawData.contents === 'string' ? JSON.parse(rawData.contents) : (rawData.contents || rawData);
-                        if (apiResponse) break;
-                    } catch (e) { console.error("Proxy error:", e); }
+                        const json = await res.json();
+                        // Handle format berbeza dari proxy
+                        const data = typeof json.contents === 'string' ? JSON.parse(json.contents) : (json.contents || json);
+                        if (data) { apiResponse = data; break; }
+                    } catch (e) { continue; }
                 }
 
-                if (!apiResponse) throw new Error("Pelayan Proxy Down.");
+                if (!apiResponse) throw new Error("Gagal menyambung ke API. Sila cuba lagi.");
 
-                // Logik Maklum Balas API
+                // Logik Keputusan API
                 if (apiResponse.status === 1 || apiResponse.LikesGivenByAPI > 0) {
                     const newBal = user.balance - pkg.price;
-                    await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
+                    const { error: uErr } = await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
+                    
+                    if(uErr) throw new Error("Ralat kemaskini baki.");
+                    
                     document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    status.innerText = `✅ BERJAYA! ${apiResponse.LikesGivenByAPI} Likes dihantar.`;
+                    status.innerText = `✅ BERJAYA! ${apiResponse.LikesGivenByAPI || ''} Likes dihantar.`;
                     status.style.color = "#22c55e";
                 } else if (apiResponse.status === 2) {
-                    status.innerText = "❌ HAD HARIAN DICAPAI: Sila cuba esok.";
+                    status.innerText = "❌ GAGAL: Had harian UID dicapai (Status 2).";
                     status.style.color = "#facc15";
                 } else {
-                    status.innerText = `❌ RALAT API: ${apiResponse.message || 'Pembekal Down'}`;
+                    status.innerText = `❌ Ralat: ${apiResponse.message || 'Pembekal Down'}`;
                     status.style.color = "#ef4444";
                 }
+
             } catch (e) {
-                status.innerText = "❌ Ralat sambungan. Sila cuba lagi.";
+                status.innerText = "❌ Ralat teknikal: " + e.message;
                 status.style.color = "#ef4444";
             } finally {
                 btn.disabled = false;
