@@ -68,25 +68,26 @@
     </div>
 
     <script>
-        // MASUKKAN ANON KEY AWAK DI SINI
+        // KONFIGURASI SUPABASE
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"; 
-        const _supabase = supabase.createClient(https://ugszmvmawidtoqjidmor.supabase.co', sb_publishable_nZY572lmgYVwQO9gXM3kGQ_3ebw_n9h);
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // NAMA JADUAL IKUT GAMBAR IMG_8081
         const TABLE_NAME = 'database panel';
 
         let currentUser = null;
         let mode = 'login';
 
+        // SENARAI PAKEJ (Dah dibetulkan koma yang tertinggal)
         const packages = [
             { name: "1,000 Likes", price: 7.00 },
             { name: "3,000 Likes", price: 12.00 },
             { name: "5,000 Likes", price: 27.00 },
-            { name: "6,000 Likes", price: 35.00 }
+            { name: "6,000 Likes", price: 35.00 },
             { name: "10,000 Likes", price: 45.00 }
         ];
 
+        // Masukkan pakej ke dalam dropdown
         const pkgSelect = document.getElementById('package-select');
         packages.forEach((pkg, i) => {
             let opt = document.createElement('option');
@@ -108,15 +109,11 @@
             if(!user || !pass) return alert("Sila isi username & password!");
 
             if(mode === 'register') {
-                // Proses Daftar
                 const { data, error } = await _supabase.from(TABLE_NAME).insert([{username:user, password:pass, balance:0}]).select();
-                if(error) {
-                    return alert("Username sudah digunakan atau masalah database!");
-                }
+                if(error) return alert("Username sudah digunakan atau masalah database!");
                 alert("Daftar berjaya! Sila Log Masuk.");
                 switchAuth('login');
             } else {
-                // Proses Login
                 const { data: profile, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', user).eq('password', pass).single();
                 if(!profile) return alert("Username atau Password salah!");
                 currentUser = profile;
@@ -137,10 +134,9 @@
             const status = document.getElementById('status-msg');
             if(!uid) return alert("Isi UID!");
 
-            // Cek baki terkini dari database
-            const { data: u } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
+            const { data: u, error } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
             
-            if(u.balance < pkg.price) {
+            if(!u || u.balance < pkg.price) {
                 status.innerText = "❌ Baki Tidak Cukup!";
                 status.style.color = "#ef4444";
                 return;
@@ -153,9 +149,7 @@
                 const res = await fetch(`https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`);
                 if(res.ok) {
                     const newBal = u.balance - pkg.price;
-                    // Update baki dalam database guna username sebagai rujukan
                     await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
-                    
                     document.getElementById('balance-amt').innerText = newBal.toFixed(2);
                     status.innerText = `✅ PESANAN DIHANTAR KE ${uid}!`;
                     status.style.color = "#22c55e";
