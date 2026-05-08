@@ -147,7 +147,7 @@
             document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
         }
 
-        // PROSES PESANAN
+        // PROSES PESANAN (FIXED VERSION)
         async function orderProcess() {
             const uid = document.getElementById('target-uid').value;
             const pkgIndex = document.getElementById('package-select').value;
@@ -156,7 +156,7 @@
             
             if(!uid) return alert("Sila isi UID!");
 
-            // Cek baki
+            // 1. Semak baki terkini dari Database
             const { data: userData, error: fetchErr } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
             
             if(fetchErr || !userData || userData.balance < pkg.price) {
@@ -169,10 +169,17 @@
             status.style.color = "#a78bfa";
 
             try {
+                // 2. Panggil API melalui AllOrigins Proxy dengan disableCache=true
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&disableCache=true`);
                 
-                if(res.ok) {
+                if(!res.ok) throw new Error("Proxy Error");
+                
+                const json = await res.json();
+                
+                // 3. Semak jika ada respons dari API (AllOrigins letak data dalam 'contents')
+                if(json && json.contents) {
+                    // Tolak baki dalam database
                     const newBal = userData.balance - pkg.price;
                     const { error: updateErr } = await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
                     
@@ -185,11 +192,12 @@
                         status.style.color = "#ef4444";
                     }
                 } else {
-                    status.innerText = "❌ API Pembekal Down.";
+                    status.innerText = "❌ API Pembekal Down / Respons Kosong.";
                     status.style.color = "#ef4444";
                 }
             } catch (e) {
-                status.innerText = "❌ Ralat sambungan proxy.";
+                console.error(e);
+                status.innerText = "❌ Ralat sambungan proxy. Sila cuba lagi.";
                 status.style.color = "#ef4444";
             }
         }
