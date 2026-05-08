@@ -68,10 +68,10 @@
     </div>
 
     <script>
+        // INISIALISASI SUPABASE
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"; 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
         const TABLE_NAME = 'database panel';
 
         let currentUser = null;
@@ -85,6 +85,7 @@
             { name: "10,000 Likes", price: 45.00 }
         ];
 
+        // Masukkan pakej ke dalam dropdown
         const pkgSelect = document.getElementById('package-select');
         packages.forEach((pkg, i) => {
             let opt = document.createElement('option');
@@ -93,6 +94,7 @@
             pkgSelect.appendChild(opt);
         });
 
+        // TUKAR ANTARA LOGIN DAN REGISTER
         function switchAuth(m) {
             mode = m;
             document.getElementById('login-tab').className = m === 'login' ? 'flex-1 pb-3 active-tab' : 'flex-1 pb-3 text-gray-500';
@@ -102,6 +104,7 @@
             document.getElementById('auth-pass').value = "";
         }
 
+        // KENDALIKAN LOG MASUK / DAFTAR
         async function handleAuth() {
             const userInput = document.getElementById('auth-user').value.trim();
             const passInput = document.getElementById('auth-pass').value.trim();
@@ -133,7 +136,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert("Ralat sistem. Sila cuba lagi.");
+                alert("Ralat sistem. Cuba lagi.");
             }
         }
 
@@ -144,6 +147,7 @@
             document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
         }
 
+        // PROSES PESANAN
         async function orderProcess() {
             const uid = document.getElementById('target-uid').value;
             const pkgIndex = document.getElementById('package-select').value;
@@ -152,7 +156,7 @@
             
             if(!uid) return alert("Sila isi UID!");
 
-            // Ambil data baki terkini dari DB
+            // Cek baki
             const { data: userData, error: fetchErr } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
             
             if(fetchErr || !userData || userData.balance < pkg.price) {
@@ -166,7 +170,6 @@
 
             try {
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                // Menggunakan AllOrigins proxy sebagai alternatif yang lebih stabil untuk CORS
                 const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
                 
                 if(res.ok) {
@@ -178,7 +181,7 @@
                         status.innerText = `✅ BERJAYA DIHANTAR KE ${uid}!`;
                         status.style.color = "#22c55e";
                     } else {
-                        status.innerText = "❌ Gagal mengemaskini baki DB.";
+                        status.innerText = "❌ Gagal kemaskini baki.";
                         status.style.color = "#ef4444";
                     }
                 } else {
@@ -186,7 +189,7 @@
                     status.style.color = "#ef4444";
                 }
             } catch (e) {
-                status.innerText = "❌ Ralat teknikal sambungan.";
+                status.innerText = "❌ Ralat sambungan proxy.";
                 status.style.color = "#ef4444";
             }
         }
