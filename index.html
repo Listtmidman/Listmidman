@@ -55,7 +55,7 @@
                 <select id="package-select" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white mt-1"></select>
             </div>
 
-            <button onclick="orderProcess()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-2xl font-black text-lg shadow-lg shadow-purple-500/20">PESAN SEKARANG</button>
+            <button id="order-btn" onclick="orderProcess()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-2xl font-black text-lg shadow-lg shadow-purple-500/20">PESAN SEKARANG</button>
             <p id="status-msg" class="text-center text-sm font-medium mt-2"></p>
         </div>
 
@@ -102,77 +102,18 @@
         async function handleAuth() {
             const userInput = document.getElementById('auth-user').value.trim();
             const passInput = document.getElementById('auth-pass').value.trim();
+            const btn = document.getElementById('auth-btn');
+
             if(!userInput || !passInput) return alert("Sila isi Username dan Password!");
+
+            btn.disabled = true;
+            btn.innerText = "Sila Tunggu...";
 
             try {
                 if(mode === 'register') {
                     const { error } = await _supabase.from(TABLE_NAME).insert([{username: userInput, password: passInput, balance: 0}]);
-                    if(error) return alert("Username sudah digunakan!");
+                    if(error) throw new Error("Username sudah digunakan!");
                     alert("Berjaya daftar! Sila log masuk.");
                     switchAuth('login');
                 } else {
-                    const { data, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', userInput).eq('password', passInput);
-                    if(error || !data.length) return alert("Username atau Password salah!");
-                    currentUser = data[0];
-                    startDashboard();
-                }
-            } catch (err) { alert("Masalah sistem."); }
-        }
-
-        function startDashboard() {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-            document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
-        }
-
-        async function orderProcess() {
-            const uid = document.getElementById('target-uid').value;
-            const pkgIndex = document.getElementById('package-select').value;
-            const pkg = packages[pkgIndex];
-            const status = document.getElementById('status-msg');
-            
-            if(!uid) return alert("Sila isi UID!");
-
-            // Semak baki terkini
-            const { data: userData, error: fetchErr } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
-            
-            if(fetchErr || userData.balance < pkg.price) {
-                status.innerText = "❌ Baki Tidak Cukup!";
-                status.style.color = "#ef4444";
-                return;
-            }
-
-            status.innerText = "⏳ Sedang menghubungi pembekal...";
-            status.style.color = "#a78bfa";
-
-            try {
-                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                // Menggunakan proxy AllOrigins untuk mengelakkan isu CORS
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&disableCache=true`);
-                
-                const jsonWrapper = await res.json();
-                // PENTING: Menukar 'contents' daripada string kepada JSON objek
-                const apiResponse = JSON.parse(jsonWrapper.contents);
-
-                // Jika status dari API adalah 1 (Berjaya)
-                if(apiResponse.status === 1 || apiResponse.LikesGivenByAPI > 0) {
-                    const newBal = userData.balance - pkg.price;
-                    await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
-                    
-                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    status.innerText = `✅ BERJAYA! ${apiResponse.LikesGivenByAPI} Likes dihantar.`;
-                    status.style.color = "#22c55e";
-                } else {
-                    // Jika status API adalah 2 (Gagal/Limit)
-                    status.innerText = `❌ Gagal: Respons API Status ${apiResponse.status}`;
-                    status.style.color = "#facc15";
-                }
-            } catch (e) {
-                status.innerText = "❌ Ralat sambungan proxy. Sila cuba lagi.";
-                status.style.color = "#ef4444";
-            }
-        }
-    </script>
-</body>
-</html>
+                    const { data, error } = await _
