@@ -1,31 +1,116 @@
 <!DOCTYPE html>
-<!--
-  This file is the entry for ALL routes, including /preview/* canvas iframes.
-  Fonts are loaded here as non-blocking <link> tags (not CSS @import, which is render-blocking).
--->
-<html lang="en" style="height: 100%">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeastPanel - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg:#0e0b18; --card:#13101f; --border:#2d2944; --fg:#f0eeff; }
+        body { background: var(--bg); color: var(--fg); font-family: sans-serif; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="p-6">
+    <div id="auth-section" class="max-w-md mx-auto mt-20 bg-gray-900 p-8 rounded-2xl border border-purple-500/30 text-center">
+        <h2 class="text-2xl font-bold mb-4 text-purple-400">BEAST PANEL</h2>
+        <input id="user-input" type="text" placeholder="Username Pembeli" class="w-full p-3 bg-black border border-gray-700 rounded-lg mb-4 text-white text-center">
+        <button onclick="handleLogin()" class="w-full bg-purple-600 p-3 rounded-lg font-bold">MASUK DASHBOARD</button>
+    </div>
 
-    <meta property="og:title" content="Mockup Canvas" />
-    <meta property="og:description" content="UI prototyping sandbox with infinite canvas" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Mockup Canvas" />
-    <meta name="twitter:description" content="UI prototyping sandbox with infinite canvas" />
+    <div id="main-dashboard" class="max-w-md mx-auto hidden bg-gray-900 p-6 rounded-2xl border border-purple-500/30">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <p class="text-gray-400 text-xs">HALO,</p>
+                <h3 id="display-name" class="text-xl font-bold">USER</h3>
+            </div>
+            <div class="text-right">
+                <p class="text-gray-400 text-xs text-right">BAKI ANDA</p>
+                <p class="text-green-400 text-2xl font-bold text-right">$<span id="balance-amt">0.00</span></p>
+            </div>
+        </div>
 
-    <title>Mockup Canvas</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
-    <!-- Non-blocking font bundle: renders with fallback fonts immediately, swaps in when loaded -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" media="print" onload="this.media='all'"
-          href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&family=Oxanium:wght@200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&family=Oxanium:wght@200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"></noscript>
-  </head>
-  <body style="height: 100%; margin: 0">
-    <div id="root" style="height: 100%"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+        <div class="space-y-4">
+            <label class="block text-xs text-gray-400">PLAYER ID (UID)</label>
+            <input id="target-uid" type="text" placeholder="Contoh: 12345678" class="w-full p-3 bg-black border border-gray-700 rounded-lg text-white">
+            
+            <label class="block text-xs text-gray-400">PILIH PAKEJ LIKES</label>
+            <select id="package-select" class="w-full p-3 bg-black border border-gray-700 rounded-lg text-white"></select>
+            
+            <button onclick="orderProcess()" class="w-full bg-purple-600 p-4 rounded-xl font-bold text-lg mt-4 shadow-lg shadow-purple-500/20">PESAN SEKARANG</button>
+            <p id="status-msg" class="text-center text-sm mt-4 font-medium"></p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
+        const SUPABASE_KEY = "GANTI_DENGAN_ANON_KEY_AWAK"; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        const packages = [
+            { name: "1,000 Likes", price: 7.00 },
+            { name: "3,000 Likes", price: 12.00 },
+            { name: "5,000 Likes", price: 27.00 },
+            { name: "6,000 Likes", price: 35.00 },
+            { name: "10,000 Likes", price: 45.00 }
+        ];
+
+        const pkgSelect = document.getElementById('package-select');
+        packages.forEach((pkg, index) => {
+            let opt = document.createElement('option');
+            opt.value = index;
+            opt.innerHTML = `${pkg.name} - $${pkg.price.toFixed(2)}`;
+            pkgSelect.appendChild(opt);
+        });
+
+        async function handleLogin() {
+            const user = document.getElementById('user-input').value.trim();
+            if(!user) return alert("Sila isi username!");
+            let { data: profile } = await _supabase.from('profiles').select('*').eq('username', user).single();
+            if(!profile) {
+                const { data: newP } = await _supabase.from('profiles').insert([{username:user, balance:0.00}]).select().single();
+                profile = newP;
+            }
+            currentUser = profile;
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('display-name').innerText = currentUser.username;
+            document.getElementById('balance-amt').innerText = currentUser.balance.toFixed(2);
+        }
+
+        async function orderProcess() {
+            const uid = document.getElementById('target-uid').value;
+            const pkg = packages[document.getElementById('package-select').value];
+            const status = document.getElementById('status-msg');
+            if(!uid) return alert("Masukkan UID Player!");
+            
+            const { data: u } = await _supabase.from('profiles').select('balance').eq('id', currentUser.id).single();
+            if(u.balance < pkg.price) {
+                status.innerText = "❌ Baki tidak mencukupi!";
+                status.style.color = "#ef4444";
+                return;
+            }
+
+            status.innerText = "⏳ Sedang diproses...";
+            status.style.color = "#a78bfa";
+            
+            try {
+                const res = await fetch(`https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`);
+                if(res.ok) {
+                    const newB = u.balance - pkg.price;
+                    await _supabase.from('profiles').update({balance: newB}).eq('id', currentUser.id);
+                    document.getElementById('balance-amt').innerText = newB.toFixed(2);
+                    status.innerText = `✅ BERJAYA! ${pkg.name} dihantar ke ${uid}`;
+                    status.style.color = "#22c55e";
+                } else {
+                    status.innerText = "❌ Ralat API Pembekal.";
+                }
+            } catch (e) {
+                status.innerText = "❌ Gagal menyambung ke API.";
+            }
+        }
+    </script>
+</body>
 </html>
