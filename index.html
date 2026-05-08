@@ -3,43 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeastPanel - Dashboard</title>
+    <title>BeastPanel - SMM System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg:#0e0b18; --card:#13101f; --border:#2d2944; --fg:#f0eeff; }
-        body { background: var(--bg); color: var(--fg); font-family: sans-serif; }
+        body { background: var(--bg); color: var(--fg); font-family: sans-serif; min-height: 100vh; }
         .hidden { display: none; }
+        .active-tab { border-bottom: 2px solid #a78bfa; color: #a78bfa; font-weight: bold; }
     </style>
 </head>
-<body class="p-6">
-    <div id="auth-section" class="max-w-md mx-auto mt-20 bg-gray-900 p-8 rounded-2xl border border-purple-500/30 text-center">
-        <h2 class="text-2xl font-bold mb-4 text-purple-400">BEAST PANEL</h2>
-        <input id="user-input" type="text" placeholder="Username Pembeli" class="w-full p-3 bg-black border border-gray-700 rounded-lg mb-4 text-white text-center">
-        <button onclick="handleLogin()" class="w-full bg-purple-600 p-3 rounded-lg font-bold">MASUK DASHBOARD</button>
-    </div>
+<body class="flex flex-col items-center p-4">
 
-    <div id="main-dashboard" class="max-w-md mx-auto hidden bg-gray-900 p-6 rounded-2xl border border-purple-500/30">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <p class="text-gray-400 text-xs">HALO,</p>
-                <h3 id="display-name" class="text-xl font-bold">USER</h3>
-            </div>
-            <div class="text-right">
-                <p class="text-gray-400 text-xs text-right">BAKI ANDA</p>
-                <p class="text-green-400 text-2xl font-bold text-right">$<span id="balance-amt">0.00</span></p>
-            </div>
+    <div id="auth-section" class="w-full max-w-md bg-gray-900 mt-10 p-8 rounded-3xl border border-purple-500/30 shadow-2xl">
+        <h2 class="text-3xl font-extrabold text-center mb-6 text-purple-400 italic">BEAST PANEL</h2>
+        
+        <div class="flex mb-6 border-b border-gray-800">
+            <button id="login-tab" onclick="switchAuth('login')" class="flex-1 pb-3 active-tab">LOG MASUK</button>
+            <button id="register-tab" onclick="switchAuth('register')" class="flex-1 pb-3 text-gray-500">DAFTAR</button>
         </div>
 
         <div class="space-y-4">
-            <label class="block text-xs text-gray-400">PLAYER ID (UID)</label>
-            <input id="target-uid" type="text" placeholder="Contoh: 12345678" class="w-full p-3 bg-black border border-gray-700 rounded-lg text-white">
+            <input id="auth-user" type="text" placeholder="Username" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white outline-none focus:border-purple-500">
+            <input id="auth-pass" type="password" placeholder="Password" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white outline-none focus:border-purple-500">
+            <button id="auth-btn" onclick="handleAuth()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-xl font-bold text-lg transition-all">MASUK SEKARANG</button>
+        </div>
+    </div>
+
+    <div id="main-dashboard" class="w-full max-w-md hidden">
+        <div class="bg-gray-900 p-6 rounded-3xl border border-purple-500/30 mb-4 flex justify-between items-center shadow-lg">
+            <div>
+                <p class="text-gray-500 text-xs uppercase tracking-widest">PENGGUNA</p>
+                <h3 id="display-name" class="text-xl font-bold text-white">---</h3>
+            </div>
+            <div class="text-right">
+                <p class="text-gray-500 text-xs uppercase tracking-widest">BAKI ANDA</p>
+                <p class="text-green-400 text-3xl font-black">$<span id="balance-amt">0.00</span></p>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 p-6 rounded-3xl border border-purple-500/30 space-y-5 shadow-lg">
+            <h4 class="font-bold text-purple-300 uppercase text-sm tracking-widest">Pesan Likes Automatik</h4>
             
-            <label class="block text-xs text-gray-400">PILIH PAKEJ LIKES</label>
-            <select id="package-select" class="w-full p-3 bg-black border border-gray-700 rounded-lg text-white"></select>
-            
-            <button onclick="orderProcess()" class="w-full bg-purple-600 p-4 rounded-xl font-bold text-lg mt-4 shadow-lg shadow-purple-500/20">PESAN SEKARANG</button>
-            <p id="status-msg" class="text-center text-sm mt-4 font-medium"></p>
+            <div>
+                <label class="text-xs text-gray-500 ml-1">PLAYER ID (UID)</label>
+                <input id="target-uid" type="text" placeholder="Contoh: 12345678" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white mt-1">
+            </div>
+
+            <div>
+                <label class="text-xs text-gray-500 ml-1">PILIH PAKEJ</label>
+                <select id="package-select" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white mt-1"></select>
+            </div>
+
+            <button onclick="orderProcess()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-2xl font-black text-lg shadow-lg shadow-purple-500/20">PESAN SEKARANG</button>
+            <p id="status-msg" class="text-center text-sm font-medium"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+            <button onclick="window.open('https://wa.me/60123456789?text=Nak+Topup+Baki')" class="bg-green-600 p-4 rounded-2xl font-bold flex items-center justify-center gap-2">
+                <span>➕ TOPUP</span>
+            </button>
+            <button onclick="location.reload()" class="bg-gray-800 p-4 rounded-2xl font-bold text-gray-300">LOGOUT</button>
         </div>
     </div>
 
@@ -49,34 +73,54 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
+        let mode = 'login';
+
         const packages = [
-            { name: "1,000 Likes", price: 7.00 },
-            { name: "3,000 Likes", price: 12.00 },
-            { name: "5,000 Likes", price: 27.00 },
-            { name: "6,000 Likes", price: 35.00 },
-            { name: "10,000 Likes", price: 45.00 }
+            { name: "100 Likes", price: 0.10 },
+            { name: "500 Likes", price: 0.50 },
+            { name: "1,000 Likes", price: 1.00 },
+            { name: "5,000 Likes", price: 5.00 },
+            { name: "10,000 Likes", price: 10.00 }
         ];
 
+        // Load Packages
         const pkgSelect = document.getElementById('package-select');
-        packages.forEach((pkg, index) => {
+        packages.forEach((pkg, i) => {
             let opt = document.createElement('option');
-            opt.value = index;
+            opt.value = i;
             opt.innerHTML = `${pkg.name} - $${pkg.price.toFixed(2)}`;
             pkgSelect.appendChild(opt);
         });
 
-        async function handleLogin() {
-            const user = document.getElementById('user-input').value.trim();
-            if(!user) return alert("Sila isi username!");
-            let { data: profile } = await _supabase.from('profiles').select('*').eq('username', user).single();
-            if(!profile) {
-                const { data: newP } = await _supabase.from('profiles').insert([{username:user, balance:0.00}]).select().single();
-                profile = newP;
+        function switchAuth(m) {
+            mode = m;
+            document.getElementById('login-tab').className = m === 'login' ? 'flex-1 pb-3 active-tab' : 'flex-1 pb-3 text-gray-500';
+            document.getElementById('register-tab').className = m === 'register' ? 'flex-1 pb-3 active-tab' : 'flex-1 pb-3 text-gray-500';
+            document.getElementById('auth-btn').innerText = m === 'login' ? 'LOG MASUK' : 'DAFTAR AKAUN';
+        }
+
+        async function handleAuth() {
+            const user = document.getElementById('auth-user').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
+            if(!user || !pass) return alert("Isi semua kotak!");
+
+            if(mode === 'register') {
+                const { data, error } = await _supabase.from('profiles').insert([{username:user, password:pass, balance:0}]).select();
+                if(error) return alert("Username sudah digunakan!");
+                alert("Daftar berjaya! Sila log masuk.");
+                switchAuth('login');
+            } else {
+                const { data: profile, error } = await _supabase.from('profiles').select('*').eq('username', user).eq('password', pass).single();
+                if(!profile) return alert("Username atau Password salah!");
+                currentUser = profile;
+                startDashboard();
             }
-            currentUser = profile;
+        }
+
+        function startDashboard() {
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('display-name').innerText = currentUser.username;
+            document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
             document.getElementById('balance-amt').innerText = currentUser.balance.toFixed(2);
         }
 
@@ -84,31 +128,31 @@
             const uid = document.getElementById('target-uid').value;
             const pkg = packages[document.getElementById('package-select').value];
             const status = document.getElementById('status-msg');
-            if(!uid) return alert("Masukkan UID Player!");
-            
+            if(!uid) return alert("Isi UID!");
+
             const { data: u } = await _supabase.from('profiles').select('balance').eq('id', currentUser.id).single();
             if(u.balance < pkg.price) {
-                status.innerText = "❌ Baki tidak mencukupi!";
+                status.innerText = "❌ Baki Tidak Cukup! Sila Topup.";
                 status.style.color = "#ef4444";
                 return;
             }
 
-            status.innerText = "⏳ Sedang diproses...";
+            status.innerText = "⏳ Sedang memproses pesanan...";
             status.style.color = "#a78bfa";
-            
+
             try {
                 const res = await fetch(`https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`);
                 if(res.ok) {
-                    const newB = u.balance - pkg.price;
-                    await _supabase.from('profiles').update({balance: newB}).eq('id', currentUser.id);
-                    document.getElementById('balance-amt').innerText = newB.toFixed(2);
-                    status.innerText = `✅ BERJAYA! ${pkg.name} dihantar ke ${uid}`;
+                    const newBal = u.balance - pkg.price;
+                    await _supabase.from('profiles').update({balance: newBal}).eq('id', currentUser.id);
+                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
+                    status.innerText = `✅ BERJAYA DIHANTAR KE ${uid}!`;
                     status.style.color = "#22c55e";
                 } else {
-                    status.innerText = "❌ Ralat API Pembekal.";
+                    status.innerText = "❌ Ralat API. Cuba lagi.";
                 }
             } catch (e) {
-                status.innerText = "❌ Gagal menyambung ke API.";
+                status.innerText = "❌ Gagal sambung ke server.";
             }
         }
     </script>
