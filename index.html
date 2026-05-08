@@ -98,23 +98,43 @@
             document.getElementById('login-tab').className = m === 'login' ? 'flex-1 pb-3 active-tab' : 'flex-1 pb-3 text-gray-500';
             document.getElementById('register-tab').className = m === 'register' ? 'flex-1 pb-3 active-tab' : 'flex-1 pb-3 text-gray-500';
             document.getElementById('auth-btn').innerText = m === 'login' ? 'LOG MASUK' : 'DAFTAR AKAUN';
+            // Reset input
+            document.getElementById('auth-user').value = "";
+            document.getElementById('auth-pass').value = "";
         }
 
         async function handleAuth() {
-            const user = document.getElementById('auth-user').value.trim();
-            const pass = document.getElementById('auth-pass').value.trim();
-            if(!user || !pass) return alert("Sila isi username & password!");
+            const userInput = document.getElementById('auth-user').value.trim();
+            const passInput = document.getElementById('auth-pass').value.trim();
+            
+            if(!userInput || !passInput) {
+                alert("Sila isi username & password!");
+                return;
+            }
 
-            if(mode === 'register') {
-                const { data, error } = await _supabase.from(TABLE_NAME).insert([{username:user, password:pass, balance:0}]).select();
-                if(error) return alert("Username sudah digunakan atau masalah database!");
-                alert("Daftar berjaya! Sila Log Masuk.");
-                switchAuth('login');
-            } else {
-                const { data: profile, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', user).eq('password', pass).single();
-                if(!profile) return alert("Username atau Password salah!");
-                currentUser = profile;
-                startDashboard();
+            try {
+                if(mode === 'register') {
+                    const { data, error } = await _supabase.from(TABLE_NAME).insert([{username: userInput, password: passInput, balance: 0}]);
+                    if(error) {
+                        alert("Username sudah digunakan!");
+                        return;
+                    }
+                    alert("Daftar berjaya! Sila Log Masuk.");
+                    switchAuth('login');
+                } else {
+                    const { data, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', userInput).eq('password', passInput);
+                    
+                    if(error || !data || data.length === 0) {
+                        alert("Username atau Password salah!");
+                        return;
+                    }
+                    
+                    currentUser = data[0];
+                    startDashboard();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Ralat sistem. Sila cuba lagi.");
             }
         }
 
@@ -124,50 +144,3 @@
             document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
             document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
         }
-
-        async function orderProcess() {
-            const uid = document.getElementById('target-uid').value;
-            const pkg = packages[document.getElementById('package-select').value];
-            const status = document.getElementById('status-msg');
-            if(!uid) return alert("Isi UID!");
-
-            const { data: u, error } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
-            
-            if(!u || u.balance < pkg.price) {
-                status.innerText = "❌ Baki Tidak Cukup!";
-                status.style.color = "#ef4444";
-                return;
-            }
-
-            status.innerText = "⏳ Sedang memproses...";
-            status.style.color = "#a78bfa";
-
-            try {
-                // Menggunakan corsproxy.io yang lebih stabil
-                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-                
-                if(res.ok) {
-                    const newBal = u.balance - pkg.price;
-                    const { error: upErr } = await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
-                    
-                    if(!upErr) {
-                        document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                        status.innerText = `✅ BERJAYA DIHANTAR KE ${uid}!`;
-                        status.style.color = "#22c55e";
-                    } else {
-                        status.innerText = "❌ Gagal mengemaskini baki.";
-                        status.style.color = "#ef4444";
-                    }
-                } else {
-                    status.innerText = "❌ API Pembekal Down.";
-                    status.style.color = "#ef4444";
-                }
-            } catch (e) {
-                status.innerText = "❌ Masalah sambungan proxy.";
-                status.style.color = "#ef4444";
-            }
-        }
-    </script>
-</body>
-</html>
