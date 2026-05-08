@@ -47,7 +47,7 @@
             
             <div>
                 <label class="text-xs text-gray-500 ml-1">PLAYER ID (UID)</label>
-                <input id="target-uid" type="text" placeholder="Contoh: 12345678" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white mt-1">
+                <input id="target-uid" type="text" placeholder="Contoh: 2039167032" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white mt-1">
             </div>
 
             <div>
@@ -56,4 +56,136 @@
             </div>
 
             <button onclick="orderProcess()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-2xl font-black text-lg shadow-lg shadow-purple-500/20">PESAN SEKARANG</button>
-            <p id="status-msg" class="text
+            <p id="status-msg" class="text-center text-sm font-medium mt-2"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+            <button onclick="window.open('https://wa.me/601162406482?text=Nak+Topup')" class="bg-green-600 p-4 rounded-2xl font-bold flex items-center justify-center gap-2">
+                <span>➕ TOPUP</span>
+            </button>
+            <button onclick="location.reload()" class="bg-gray-800 p-4 rounded-2xl font-bold text-gray-300">LOGOUT</button>
+        </div>
+    </div>
+
+    <script>
+        // INISIALISASI
+        const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const TABLE_NAME = 'database panel';
+
+        let currentUser = null;
+        let mode = 'login';
+
+        const packages = [
+            { name: "1,000 Likes", price: 7.00 },
+            { name: "3,000 Likes", price: 12.00 },
+            { name: "5,000 Likes", price: 27.00 },
+            { name: "6,000 Likes", price: 35.00 },
+            { name: "10,000 Likes", price: 45.00 }
+        ];
+
+        const pkgSelect = document.getElementById('package-select');
+        packages.forEach((pkg, i) => {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.innerHTML = `${pkg.name} - $${pkg.price.toFixed(2)}`;
+            pkgSelect.appendChild(opt);
+        });
+
+        // FIX: Fungsi tukar tab yang lebih bersih
+        function switchAuth(m) {
+            mode = m;
+            document.getElementById('login-tab').className = m === 'login' ? 'flex-1 pb-3 active-tab' : 'flex-1 pb-3 text-gray-500';
+            document.getElementById('register-tab').className = m === 'register' ? 'flex-1 pb-3 active-tab' : 'flex-1 pb-3 text-gray-500';
+            document.getElementById('auth-btn').innerText = m === 'login' ? 'LOG MASUK' : 'DAFTAR AKAUN';
+        }
+
+        // FIX: HandleAuth dengan try-catch yang betul
+        async function handleAuth() {
+            const userInput = document.getElementById('auth-user').value.trim();
+            const passInput = document.getElementById('auth-pass').value.trim();
+            
+            if(!userInput || !passInput) {
+                alert("Sila isi Username dan Password!");
+                return;
+            }
+
+            try {
+                if(mode === 'register') {
+                    const { error } = await _supabase.from(TABLE_NAME).insert([{username: userInput, password: passInput, balance: 0}]);
+                    if(error) throw error;
+                    alert("Pendaftaran berjaya! Sila Log Masuk.");
+                    switchAuth('login');
+                } else {
+                    const { data, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', userInput).eq('password', passInput);
+                    if(error) throw error;
+                    if(!data || data.length === 0) {
+                        alert("Username atau Password salah!");
+                        return;
+                    }
+                    currentUser = data[0];
+                    startDashboard();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Ralat: " + (err.message || "Username mungkin sudah wujud."));
+            }
+        }
+
+        function startDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
+            document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
+        }
+
+        // FIX: OrderProcess dengan pengesanan Status API (Mencegah potong baki jika Status 2)
+        async function orderProcess() {
+            const uid = document.getElementById('target-uid').value;
+            const pkgIndex = document.getElementById('package-select').value;
+            const pkg = packages[pkgIndex];
+            const status = document.getElementById('status-msg');
+            
+            if(!uid) return alert("Sila isi UID!");
+
+            status.innerText = "⏳ Semak baki...";
+            const { data: userData, error: fetchErr } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
+            
+            if(fetchErr || userData.balance < pkg.price) {
+                status.innerText = "❌ Baki Tidak Cukup!";
+                status.style.color = "#ef4444";
+                return;
+            }
+
+            status.innerText = "⏳ Memproses API (Sila Tunggu)...";
+            status.style.color = "#a78bfa";
+
+            try {
+                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
+                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&disableCache=true`);
+                const jsonWrapper = await res.json();
+                const apiData = JSON.parse(jsonWrapper.contents);
+
+                // LOGIK PENTING: Hanya potong baki jika status 1 atau ada likes diberikan
+                if(apiData.status === 1 || (apiData.LikesGivenByAPI && apiData.LikesGivenByAPI > 0)) {
+                    const newBal = userData.balance - pkg.price;
+                    await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
+                    
+                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
+                    status.innerText = `✅ BERJAYA! ${apiData.LikesGivenByAPI || 'Likes'} dihantar.`;
+                    status.style.color = "#22c55e";
+                } else {
+                    // Jika dapat Status 2 atau ralat lain dari pembekal
+                    status.innerText = `❌ API Gagal: Status ${apiData.status || 'Unknown'}. Baki tidak ditolak.`;
+                    status.style.color = "#facc15";
+                    console.log("Response API:", apiData);
+                }
+            } catch (e) {
+                status.innerText = "❌ Masalah Sambungan API.";
+                status.style.color = "#ef4444";
+            }
+        }
+    </script>
+</body>
+</html>
