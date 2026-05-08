@@ -11,6 +11,7 @@
         body { background: var(--bg); color: var(--fg); font-family: sans-serif; min-height: 100vh; }
         .hidden { display: none; }
         .active-tab { border-bottom: 2px solid #a78bfa; color: #a78bfa; font-weight: bold; }
+        input, select { background: #000 !important; border: 1px solid #2d2944 !important; }
     </style>
 </head>
 <body class="flex flex-col items-center p-4">
@@ -24,8 +25,8 @@
         </div>
 
         <div class="space-y-4">
-            <input id="auth-user" type="text" placeholder="Username" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white outline-none focus:border-purple-500">
-            <input id="auth-pass" type="password" placeholder="Password" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white outline-none focus:border-purple-500">
+            <input id="auth-user" type="text" placeholder="Username" class="w-full p-4 rounded-xl text-white outline-none focus:border-purple-500">
+            <input id="auth-pass" type="password" placeholder="Password" class="w-full p-4 rounded-xl text-white outline-none focus:border-purple-500">
             <button id="auth-btn" onclick="handleAuth()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-xl font-bold text-lg transition-all">LOG MASUK</button>
         </div>
     </div>
@@ -34,11 +35,11 @@
         <div class="bg-gray-900 p-6 rounded-3xl border border-purple-500/30 mb-4 flex justify-between items-center shadow-lg">
             <div>
                 <p class="text-gray-500 text-xs uppercase tracking-widest">PENGGUNA</p>
-                <h3 id="display-name" class="text-xl font-bold text-white">---</h3>
+                <h3 id="display-name" class="text-xl font-bold text-white">IPANZZ</h3>
             </div>
             <div class="text-right">
                 <p class="text-gray-500 text-xs uppercase tracking-widest">BAKI ANDA</p>
-                <p class="text-green-400 text-3xl font-black">$<span id="balance-amt">0.00</span></p>
+                <p class="text-green-400 text-3xl font-black">$<span id="balance-amt">20000.00</span></p>
             </div>
         </div>
 
@@ -47,23 +48,23 @@
             
             <div>
                 <label class="text-xs text-gray-500 ml-1">PLAYER ID (UID)</label>
-                <input id="target-uid" type="text" placeholder="Masukkan UID" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white mt-1">
+                <input id="target-uid" type="text" placeholder="2039167032" class="w-full p-4 rounded-xl text-white mt-1">
             </div>
 
             <div>
                 <label class="text-xs text-gray-500 ml-1">PILIH PAKEJ</label>
-                <select id="package-select" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white mt-1"></select>
+                <select id="package-select" class="w-full p-4 rounded-xl text-white mt-1"></select>
             </div>
 
-            <button id="order-btn" onclick="orderProcess()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-2xl font-black text-lg shadow-lg shadow-purple-500/20">PESAN SEKARANG</button>
-            <p id="status-msg" class="text-center text-sm font-medium mt-2"></p>
+            <button id="order-btn" onclick="orderProcess()" class="w-full bg-purple-600 hover:bg-purple-700 p-4 rounded-2xl font-black text-lg shadow-lg shadow-purple-500/20 transition-all">PESAN SEKARANG</button>
+            <p id="status-msg" class="text-center text-sm font-medium mt-2 min-h-[20px]"></p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mt-4">
-            <button onclick="window.open('https://wa.me/601162406482?text=Nak+Topup')" class="bg-green-600 p-4 rounded-2xl font-bold flex items-center justify-center gap-2">
+            <button onclick="window.open('https://wa.me/601162406482?text=Nak+Topup')" class="bg-green-600 hover:bg-green-700 p-4 rounded-2xl font-bold flex items-center justify-center gap-2">
                 <span>➕ TOPUP</span>
             </button>
-            <button onclick="location.reload()" class="bg-gray-800 p-4 rounded-2xl font-bold text-gray-300">LOGOUT</button>
+            <button onclick="location.reload()" class="bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl font-bold text-gray-300">LOGOUT</button>
         </div>
     </div>
 
@@ -100,20 +101,107 @@
         }
 
         async function handleAuth() {
-            const userInput = document.getElementById('auth-user').value.trim();
-            const passInput = document.getElementById('auth-pass').value.trim();
+            const u = document.getElementById('auth-user').value.trim();
+            const p = document.getElementById('auth-pass').value.trim();
             const btn = document.getElementById('auth-btn');
 
-            if(!userInput || !passInput) return alert("Sila isi Username dan Password!");
-
+            if(!u || !p) return alert("Isi semua ruangan!");
             btn.disabled = true;
-            btn.innerText = "Sila Tunggu...";
+            btn.innerText = "Memproses...";
 
             try {
                 if(mode === 'register') {
-                    const { error } = await _supabase.from(TABLE_NAME).insert([{username: userInput, password: passInput, balance: 0}]);
-                    if(error) throw new Error("Username sudah digunakan!");
-                    alert("Berjaya daftar! Sila log masuk.");
+                    const { error } = await _supabase.from(TABLE_NAME).insert([{username: u, password: p, balance: 0}]);
+                    if(error) throw new Error("Username sudah wujud!");
+                    alert("Daftar berjaya!");
                     switchAuth('login');
                 } else {
-                    const { data, error } = await _
+                    const { data, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', u).eq('password', p);
+                    if(error || !data.length) throw new Error("Username/Password salah!");
+                    currentUser = data[0];
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('main-dashboard').classList.remove('hidden');
+                    document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
+                    document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
+                }
+            } catch (err) { alert(err.message); }
+            finally { btn.disabled = false; btn.innerText = mode === 'login' ? 'LOG MASUK' : 'DAFTAR'; }
+        }
+
+        async function orderProcess() {
+            const uid = document.getElementById('target-uid').value.trim();
+            const pkg = packages[document.getElementById('package-select').value];
+            const status = document.getElementById('status-msg');
+            const btn = document.getElementById('order-btn');
+
+            if(!uid) return alert("Sila masukkan UID!");
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            status.innerText = "⏳ Menyambung ke pelayan...";
+            status.style.color = "#a78bfa";
+
+            try {
+                // Semak baki terkini dari DB
+                const { data: user } = await _supabase.from(TABLE_NAME).select('balance').eq('username', currentUser.username).single();
+                if(user.balance < pkg.price) {
+                    status.innerText = "❌ Baki Tidak Cukup!";
+                    status.style.color = "#ef4444";
+                    return;
+                }
+
+                // Senarai Proxy (Backup jika satu gagal)
+                const proxies = [
+                    `https://api.allorigins.win/get?url=`,
+                    `https://thingproxy.freeboard.io/fetch/`,
+                    `https://corsproxy.io/?`
+                ];
+
+                let apiResponse = null;
+                let successConnect = false;
+
+                // Cuba setiap proxy sehingga berjaya sambung
+                for(let proxy of proxies) {
+                    try {
+                        const target = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
+                        const res = await fetch(proxy + encodeURIComponent(target));
+                        const data = await res.json();
+                        
+                        // Parse data jika guna AllOrigins
+                        apiResponse = typeof data.contents === 'string' ? JSON.parse(data.contents) : (data.contents || data);
+                        
+                        if(apiResponse) {
+                            successConnect = true;
+                            break;
+                        }
+                    } catch(e) { continue; }
+                }
+
+                if(!successConnect) throw new Error("Semua Proxy Gagal.");
+
+                // Logik Keputusan API
+                if(apiResponse.status === 1 || apiResponse.LikesGivenByAPI > 0) {
+                    const newBal = user.balance - pkg.price;
+                    await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
+                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
+                    status.innerText = `✅ BERJAYA! ${apiResponse.LikesGivenByAPI} Likes dihantar.`;
+                    status.style.color = "#22c55e";
+                } else if(apiResponse.status === 2) {
+                    status.innerText = "❌ GAGAL: Limit Harian UID Telah Dicapai.";
+                    status.style.color = "#facc15";
+                } else {
+                    status.innerText = `❌ API Error: ${apiResponse.message || 'Pembekal Down'}`;
+                    status.style.color = "#ef4444";
+                }
+
+            } catch (e) {
+                status.innerText = "❌ Ralat Sambungan. Sila cuba lagi.";
+                status.style.color = "#ef4444";
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+    </script>
+</body>
+</html>
