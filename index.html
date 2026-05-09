@@ -78,11 +78,218 @@
             <button id="register-tab" onclick="switchAuth('register')" class="flex-1 pb-3 text-sm font-bold text-gray-600 transition-all duration-300">NEW UPLINK</button>
         </div>
 
-        <div class="space-y-5">
+        <div class="space-y-6">
             <div class="relative">
                 <input id="auth-user" type="text" placeholder="Username" class="w-full p-4 rounded-xl text-white outline-none neon-border-focus pl-12">
                 <span class="absolute left-4 top-4 opacity-30">👤</span>
             </div>
             <div class="relative">
                 <input id="auth-pass" type="password" placeholder="Password" class="w-full p-4 rounded-xl text-white outline-none neon-border-focus pl-12">
-                <span class="absolute left-4 top-4 opacity-30">🔑
+                <span class="absolute left-4 top-4 opacity-30">🔑</span>
+            </div>
+            
+            <button id="auth-btn" onclick="handleAuth()" class="w-full bg-purple-600 text-white hover:bg-purple-500 p-4 rounded-xl font-black text-lg tracking-widest btn-glow transition-all mt-2">
+                INITIALIZE
+            </button>
+        </div>
+    </div>
+
+    <div id="main-dashboard" class="w-full max-w-md hidden space-y-4">
+        <div class="glass-card p-6 rounded-3xl border-l-4 border-l-purple-500 flex justify-between items-center mt-6">
+            <div>
+                <p class="text-purple-400 text-[10px] font-bold tracking-tighter uppercase">Subject ID</p>
+                <h3 id="display-name" class="text-xl font-bold text-white tracking-widest">---</h3>
+            </div>
+            <div class="text-right">
+                <p class="text-green-400 text-[10px] font-bold tracking-tighter uppercase">Available Credits</p>
+                <p class="text-green-400 text-3xl font-black neon-text">$<span id="balance-amt">0.00</span></p>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-3xl space-y-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-2 opacity-10 text-[8px]">V.3.1_ENCRYPTED</div>
+            <h4 class="font-bold text-purple-300 uppercase text-xs tracking-[0.2em] text-center mb-2">Injection Terminal</h4>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] text-gray-500 ml-1 uppercase tracking-widest">Target UID</label>
+                    <input id="target-uid" type="text" placeholder="Enter Player ID" class="w-full p-4 rounded-xl text-white mt-1 neon-border-focus font-mono">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-500 ml-1 uppercase tracking-widest">Data Packet Size</label>
+                    <select id="package-select" class="w-full p-4 rounded-xl text-white mt-1 neon-border-focus"></select>
+                </div>
+                <button id="order-btn" onclick="orderProcess()" class="w-full bg-transparent border-2 border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white p-4 rounded-2xl font-black text-lg tracking-widest transition-all btn-glow">EXECUTE ORDER</button>
+            </div>
+            
+            <div class="mt-4 p-3 bg-black/50 rounded-lg border border-gray-800">
+                <p id="status-msg" class="text-center text-[11px] font-mono min-h-[16px] tracking-tight uppercase">Terminal Ready...</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="window.open('https://wa.me/601165406482?text=Nak+Topup')" class="bg-green-900/30 border border-green-500/50 text-green-400 p-4 rounded-2xl font-bold text-xs tracking-widest hover:bg-green-500 hover:text-black transition-all">
+                [+] UPLOAD CREDITS
+            </button>
+            <button onclick="location.reload()" class="bg-red-900/20 border border-red-500/50 text-red-400 p-4 rounded-2xl font-bold text-xs tracking-widest hover:bg-red-500 hover:text-black transition-all">
+                [-] DISCONNECT
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(10, 10, 10, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#a78bfa";
+            ctx.font = fontSize + "px monospace";
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const TABLE_NAME = 'database panel';
+
+        let currentUser = null;
+        let mode = 'login';
+
+        const packages = [
+            { name: "1,000 LIKES", price: 7.00 },
+            { name: "3,000 LIKES", price: 12.00 },
+            { name: "5,000 LIKES", price: 27.00 },
+            { name: "6,000 LIKES", price: 35.00 },
+            { name: "10,000 LIKES", price: 45.00 }
+        ];
+
+        const pkgSelect = document.getElementById('package-select');
+        packages.forEach((pkg, i) => {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.innerHTML = `${pkg.name} > $${pkg.price.toFixed(2)}`;
+            pkgSelect.appendChild(opt);
+        });
+
+        function switchAuth(m) {
+            mode = m;
+            document.getElementById('login-tab').className = m === 'login' ? 'flex-1 pb-3 text-sm font-bold transition-all duration-300 border-b-2 border-purple-500 neon-text' : 'flex-1 pb-3 text-sm font-bold text-gray-600 transition-all duration-300';
+            document.getElementById('register-tab').className = m === 'register' ? 'flex-1 pb-3 text-sm font-bold transition-all duration-300 border-b-2 border-purple-500 neon-text' : 'flex-1 pb-3 text-sm font-bold text-gray-600 transition-all duration-300';
+            document.getElementById('auth-btn').innerText = m === 'login' ? 'INITIALIZE' : 'CREATE UPLINK';
+        }
+
+        async function handleAuth() {
+            const u = document.getElementById('auth-user').value.trim();
+            const p = document.getElementById('auth-pass').value.trim();
+            const btn = document.getElementById('auth-btn');
+            if(!u || !p) return alert("Missing Credentials!");
+            btn.innerText = "AUTHENTICATING...";
+            try {
+                if(mode === 'register') {
+                    const { error } = await _supabase.from(TABLE_NAME).insert([{username: u, password: p, balance: 0}]);
+                    if(error) throw new Error("Link Failed!");
+                    alert("Account Created. Secure Login Now.");
+                    switchAuth('login');
+                } else {
+                    const { data, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', u).eq('password', p).maybeSingle();
+                    if(error || !data) throw new Error("Access Denied!");
+                    currentUser = data;
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('main-dashboard').classList.remove('hidden');
+                    document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
+                    document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
+                }
+            } catch (err) { alert(err.message); }
+            finally { btn.innerText = mode === 'login' ? 'INITIALIZE' : 'CREATE UPLINK'; }
+        }
+
+        async function orderProcess() {
+            const uid = document.getElementById('target-uid').value.trim();
+            const pkg = packages[document.getElementById('package-select').value];
+            const status = document.getElementById('status-msg');
+            const btn = document.getElementById('order-btn');
+
+            if(!uid) return alert("UID Required!");
+            
+            btn.classList.add('loading-pulse');
+            btn.disabled = true;
+            status.innerText = "> INITIATING UPLINK...";
+            status.style.color = "#a78bfa";
+
+            try {
+                const { data: user, error: userErr } = await _supabase
+                    .from(TABLE_NAME)
+                    .select('balance')
+                    .eq('username', currentUser.username)
+                    .single();
+                
+                if(userErr || user.balance < pkg.price) {
+                    status.innerText = "> ERROR: INSUFFICIENT CREDITS";
+                    status.style.color = "#ef4444";
+                    btn.classList.remove('loading-pulse');
+                    btn.disabled = false;
+                    return;
+                }
+
+                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+                const res = await fetch(proxyUrl);
+                const rawData = await res.json();
+                
+                let apiResponse = null;
+                
+                if (rawData.contents) {
+                    try {
+                        apiResponse = JSON.parse(rawData.contents);
+                    } catch(e) {
+                        apiResponse = rawData.contents; 
+                    }
+                }
+
+                if (apiResponse && (apiResponse.status == 1 || apiResponse.status === "success" || apiResponse.LikesGivenByAPI > 0)) {
+                    const newBal = user.balance - pkg.price;
+                    const { error: updErr } = await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
+                    
+                    if(!updErr) {
+                        document.getElementById('balance-amt').innerText = newBal.toFixed(2);
+                        const injectedAmt = apiResponse.LikesGivenByAPI || pkg.name.split(' ')[0];
+                        status.innerText = `> SUCCESS: ${injectedAmt} DATA INJECTED`;
+                        status.style.color = "#22c55e";
+                    } else {
+                        status.innerText = "> ERROR: DATABASE SYNC FAILED";
+                        status.style.color = "#ef4444";
+                    }
+                } 
+                else {
+                    let errorMsg = apiResponse?.message || "PROVIDER DOWN / INVALID UID";
+                    status.innerText = `> FAILED: ${errorMsg.toUpperCase()}`;
+                    status.style.color = "#ef4444";
+                }
+
+            } catch (e) {
+                status.innerText = "> ERROR: PROXY CONNECTION REFUSED";
+                status.style.color = "#ef4444";
+                console.error(e);
+            } finally { 
+                btn.classList.remove('loading-pulse'); 
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
