@@ -18,6 +18,9 @@
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
         .hidden { display: none !important; }
         .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
+        
+        /* Rank Tags */
+        .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -36,6 +39,7 @@
     <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
         <div class="glass p-6 flex justify-between items-center neon-border">
             <div>
+                <span id="user-rank" class="rank-badge">MEMBER</span>
                 <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
                 <h3 id="display-name" class="text-xl font-black text-white">---</h3>
             </div>
@@ -75,21 +79,13 @@
 
             <label class="text-[10px] text-gray-500 uppercase ml-1">Select Package Amount</label>
             <select id="package-select" class="input-field">
-                <option value="1">100 LIKES - $1.00</option>
-                <option value="3">500 LIKES - $3.00</option>
-                <option value="7">1,000 LIKES - $7.00</option>
-                <option value="12">3,000 LIKES - $12.00</option>
-                <option value="20">5,000 LIKES - $20.00</option>
-                <option value="35">10,000 LIKES - $35.00</option>
-                <option value="65">20,000 LIKES - $65.00</option>
-                <option value="150">30,000 LIKES - $150.00</option>
-            </select>
+                </select>
 
             <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
 
             <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[80px]">
                 <p id="status-msg" class="text-blue-400 text-[10px] font-mono">&gt; STANDBY...</p>
-                <p id="api-debug" class="text-gray-600 text-[8px] mt-2 break-all font-mono"></p>
+                <p id="api-debug" class="text-gray-600 text-[8px] mt-2 break-all font-mono hidden"></p>
             </div>
 
             <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20 uppercase tracking-widest">[-] Disconnect Session</button>
@@ -102,55 +98,81 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
-
         const API_BASE = "https://likeff-beast--listpagemrbeast.replit.app";
 
-        // Extract nickname from any known field names the API might return
+        // CONFIG HARGA MENGIKUT PANGKAT
+        const PRICING_PLANS = {
+            OWNER: [
+                { val: 0.10, label: "100 LIKES - $0.10" },
+                { val: 1.50, label: "500 LIKES - $1.50" },
+                { val: 2.50, label: "1,000 LIKES - $2.50" },
+                { val: 5.50, label: "3,000 LIKES - $5.50" },
+                { val: 7.50, label: "5,000 LIKES - $7.50" },
+                { val: 9.50, label: "6,000 LIKES - $9.50" },
+                { val: 12.50, label: "10,000 LIKES - $12.50" },
+                { val: 15.50, label: "20,000 LIKES - $15.50" },
+                { val: 20.50, label: "30,000 LIKES - $20.50" }
+            ],
+            PARTNER: [
+                { val: 0.5, label: "100 LIKES - $0.50" },
+                { val: 1.5, label: "500 LIKES - $1.50" },
+                { val: 4.0, label: "1,000 LIKES - $4.00" },
+                { val: 8.0, label: "3,000 LIKES - $8.00" },
+                { val: 15.0, label: "5,000 LIKES - $15.00" },
+                { val: 25.0, label: "10,000 LIKES - $25.00" },
+                { val: 50.0, label: "20,000 LIKES - $50.00" },
+                { val: 100.0, label: "30,000 LIKES - $100.00" }
+            ],
+            RESELLER: [
+                { val: 0.8, label: "100 LIKES - $0.80" },
+                { val: 2.5, label: "500 LIKES - $2.50" },
+                { val: 5.5, label: "1,000 LIKES - $5.50" },
+                { val: 10.0, label: "3,000 LIKES - $10.00" },
+                { val: 18.0, label: "5,000 LIKES - $18.00" },
+                { val: 30.0, label: "10,000 LIKES - $30.00" },
+                { val: 60.0, label: "20,000 LIKES - $60.00" },
+                { val: 130.0, label: "30,000 LIKES - $130.00" }
+            ],
+            MEMBER: [
+                { val: 1.0, label: "100 LIKES - $1.00" },
+                { val: 3.0, label: "500 LIKES - $3.00" },
+                { val: 7.0, label: "1,000 LIKES - $7.00" },
+                { val: 12.0, label: "3,000 LIKES - $12.00" },
+                { val: 20.0, label: "5,000 LIKES - $20.00" },
+                { val: 35.0, label: "10,000 LIKES - $35.00" },
+                { val: 65.0, label: "20,000 LIKES - $65.00" },
+                { val: 150.0, label: "30,000 LIKES - $150.00" }
+            ]
+        };
+
+        function updatePricingDropdown(rank) {
+            const select = document.getElementById('package-select');
+            const plans = PRICING_PLANS[rank] || PRICING_PLANS.MEMBER;
+            select.innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
+        }
+
         function extractNickname(obj) {
             if (!obj || typeof obj !== 'object') return null;
             return obj.nickname || obj.PlayerNickname || obj.player_nickname || obj.name || null;
         }
 
-        function extractRegion(obj) {
-            if (!obj || typeof obj !== 'object') return null;
-            return obj.region || obj.PlayerRegion || obj.player_region || null;
-        }
-
-        // Safe fetch — always returns the parsed body even on error status
         async function safeFetch(url) {
-            let res;
             try {
-                res = await fetch(url);
+                const res = await fetch(url);
+                return await res.json();
             } catch (e) {
-                throw new Error('RANGKAIAN_GAGAL: ' + (e.message || 'Network error'));
+                throw new Error('RANGKAIAN_GAGAL');
             }
-            let data;
-            try {
-                data = await res.json();
-            } catch {
-                throw new Error('RESPONS_BUKAN_JSON (HTTP ' + res.status + ')');
-            }
-            return data;
         }
 
-        // Status codes returned by the likes API
-        const STATUS_MSG = {
-            '0': 'GAGAL - UID salah atau tidak dijumpai',
-            '2': 'PENUH - ID ini dah dapat limit likes hari ini',
-            '3': 'LIMIT - API key sudah mencapai had harian',
-            '4': 'PENDING - Dalam proses, cuba semula sebentar',
-        };
+        const STATUS_MSG = { '0': 'UID SALAH', '2': 'LIMIT HARIAN PENUH', '3': 'API LIMIT', '4': 'PENDING' };
 
         async function handleAuth(type) {
             const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
             const passInput = document.getElementById('auth-pass').value.trim();
             const msg = document.getElementById('auth-msg');
 
-            if (!userInput || !passInput) {
-                msg.innerText = "SILA ISI USERNAME & PASSWORD!";
-                msg.style.color = "#ef4444";
-                return;
-            }
+            if (!userInput || !passInput) return;
 
             msg.innerText = "CONNECTING...";
             msg.style.color = "#a78bfa";
@@ -159,22 +181,33 @@
                 if (type === 'register') {
                     const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
                     if (exist) throw new Error("USERNAME SUDAH WUJUD!");
-                    const { error: insErr } = await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0 }]);
-                    if (insErr) throw insErr;
-                    msg.style.color = "#22c55e";
+                    await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0, rank: 'MEMBER' }]);
                     msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
                 } else {
                     const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
-                    if (error || !data) throw new Error("ID ATAU PASSWORD SALAH!");
+                    if (error || !data) throw new Error("ID/PASSWORD SALAH!");
+                    
                     currentUser = data;
+                    const rank = (data.rank || 'MEMBER').toUpperCase();
+                    
+                    // Update UI
                     document.getElementById('auth-container').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
                     document.getElementById('balance-amt').innerText = parseFloat(currentUser.balance).toFixed(2);
+                    
+                    // Set Rank Badge
+                    const badge = document.getElementById('user-rank');
+                    badge.innerText = rank;
+                    if(rank === 'OWNER') { badge.style.color = '#ff4d4d'; badge.style.background = 'rgba(255,77,77,0.2)'; }
+                    else if(rank === 'PARTNER') { badge.style.color = '#33ccff'; badge.style.background = 'rgba(51,204,255,0.2)'; }
+                    else if(rank === 'RESELLER') { badge.style.color = '#22c55e'; badge.style.background = 'rgba(34,197,94,0.2)'; }
+                    else { badge.style.color = '#a78bfa'; badge.style.background = 'rgba(167,139,250,0.2)'; }
+
+                    updatePricingDropdown(rank);
                 }
             } catch (e) {
-                msg.style.color = "#ef4444";
-                msg.innerText = String(e.message || e).toUpperCase();
+                msg.innerText = String(e.message).toUpperCase();
             }
         }
 
@@ -183,110 +216,60 @@
             const infoBox = document.getElementById('nick-info');
             const nickEl = document.getElementById('res-nick');
 
-            if (!uid || uid.length < 5) return alert("Sila masukkan UID yang sah!");
-
+            if (uid.length < 5) return;
             infoBox.classList.remove('hidden');
             nickEl.innerText = "SCANNING...";
-            document.getElementById('res-region').innerText = "--";
-            document.getElementById('res-lvl').innerText = "-";
-            document.getElementById('res-likes').innerText = "-";
-            document.getElementById('res-honor').innerText = "-";
-            nickEl.style.color = "white";
 
             try {
                 const res = await safeFetch(`${API_BASE}/api/ff/nickname?uid=${uid}`);
-
-                // Handle both array and object responses
                 const info = Array.isArray(res) ? res[0] : res;
                 const stats = Array.isArray(res) ? res[1] : null;
-
                 const nick = extractNickname(info) || extractNickname(stats);
-                const region = extractRegion(info) || extractRegion(stats);
 
                 if (nick) {
                     nickEl.innerText = nick;
-                    nickEl.style.color = "white";
-                    document.getElementById('res-region').innerText = region || "--";
-                    document.getElementById('res-lvl').innerText = stats?.level ?? info?.level ?? "-";
-                    const likes = stats?.likes ?? stats?.LikesbeforeCommand ?? info?.likes ?? null;
-                    document.getElementById('res-likes').innerText = likes != null ? Number(likes).toLocaleString() : "-";
-                    document.getElementById('res-honor').innerText = stats?.honor_score ?? info?.honor_score ?? "-";
-                } else if (info?.error) {
-                    nickEl.innerText = "UID TIDAK DIJUMPAI";
-                    nickEl.style.color = "#ef4444";
+                    document.getElementById('res-region').innerText = info?.region || stats?.PlayerRegion || "--";
+                    document.getElementById('res-lvl').innerText = stats?.level || info?.level || "-";
+                    document.getElementById('res-likes').innerText = stats?.likes || info?.likes || "-";
+                    document.getElementById('res-honor').innerText = stats?.honor_score || "-";
                 } else {
                     nickEl.innerText = "UID TIDAK DIJUMPAI";
-                    nickEl.style.color = "#fbbf24";
                 }
-            } catch (e) {
-                nickEl.innerText = String(e.message || e).toUpperCase();
-                nickEl.style.color = "#ef4444";
-            }
+            } catch (e) { nickEl.innerText = "ERROR SCAN"; }
         }
 
         async function executeOrder() {
             const uid = document.getElementById('target-uid').value.trim();
             const price = parseFloat(document.getElementById('package-select').value);
             const statusEl = document.getElementById('status-msg');
-            const debug = document.getElementById('api-debug');
             const btn = document.getElementById('order-btn');
 
             if (!uid) return alert("Masukkan UID!");
-
             btn.disabled = true;
-            statusEl.innerText = "> INITIALIZING INJECTION...";
-            statusEl.style.color = "#a78bfa";
-            debug.innerText = "";
+            statusEl.innerText = "> INITIALIZING...";
 
             try {
-                // Refresh balance
-                const { data: freshUser, error: fetchErr } = await _supabase
-                    .from('database panel').select('balance').eq('username', currentUser.username).single();
-
-                if (fetchErr || !freshUser) throw new Error("GAGAL SYNC DATABASE");
+                const { data: freshUser } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                 if (parseFloat(freshUser.balance) < price) throw new Error("KREDIT TIDAK MENCUKUPI");
 
-                statusEl.innerText = "> SENDING TO TARGET...";
-
                 const apiData = await safeFetch(`${API_BASE}/api/ff/likes?uid=${uid}`);
+                const apiStatus = String(apiData.status || "");
 
-                const safeLog = Object.fromEntries(
-                    Object.entries(apiData).filter(([k]) => k !== 'key_info')
-                );
-                debug.innerText = `LOG: ${JSON.stringify(safeLog)}`;
-
-                const apiStatus = String(apiData.status ?? apiData.Status ?? "");
-                const isSuccess = apiStatus === "1" || apiData.message === "Success" || apiData.success === true;
-
-                if (isSuccess) {
-                    const given = apiData.LikesGivenByAPI ?? apiData.likes_given ?? 0;
+                if (apiStatus === "1" || apiData.message === "Success") {
                     const newBal = parseFloat(freshUser.balance) - price;
                     await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
                     document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    currentUser.balance = newBal;
-                    statusEl.innerText = `> SUCCESS: ${Number(given).toLocaleString()} LIKES INJECTED`;
+                    statusEl.innerText = `> SUCCESS: INJECTION COMPLETE`;
                     statusEl.style.color = "#22c55e";
                 } else {
-                    const reason = STATUS_MSG[apiStatus]
-                        || apiData.message
-                        || apiData.error
-                        || `STATUS_${apiStatus || 'UNKNOWN'}`;
-                    statusEl.innerText = `> DITOLAK: ${reason}`;
+                    statusEl.innerText = `> REJECTED: ${STATUS_MSG[apiStatus] || 'SERVER BUSY'}`;
                     statusEl.style.color = "#fbbf24";
                 }
             } catch (e) {
-                statusEl.innerText = `> ERROR: ${String(e.message || e).toUpperCase()}`;
+                statusEl.innerText = `> ERROR: ${e.message.toUpperCase()}`;
                 statusEl.style.color = "#ef4444";
-            } finally {
-                btn.disabled = false;
-            }
+            } finally { btn.disabled = false; }
         }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !document.getElementById('auth-container').classList.contains('hidden')) {
-                handleAuth('login');
-            }
-        });
     </script>
 </body>
 </html>
