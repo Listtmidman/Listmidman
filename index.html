@@ -138,6 +138,7 @@
     </div>
 
     <script>
+        // Matrix Animation
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
@@ -161,6 +162,7 @@
         }
         setInterval(drawMatrix, 50);
 
+        // Supabase Configuration
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"; 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -196,8 +198,12 @@
             const u = document.getElementById('auth-user').value.trim();
             const p = document.getElementById('auth-pass').value.trim();
             const btn = document.getElementById('auth-btn');
+            
             if(!u || !p) return alert("Missing Credentials!");
+            
             btn.innerText = "AUTHENTICATING...";
+            btn.disabled = true;
+
             try {
                 if(mode === 'register') {
                     const { error } = await _supabase.from(TABLE_NAME).insert([{username: u, password: p, balance: 0}]);
@@ -205,16 +211,28 @@
                     alert("Account Created. Secure Login Now.");
                     switchAuth('login');
                 } else {
-                    const { data, error } = await _supabase.from(TABLE_NAME).select('*').eq('username', u).eq('password', p).maybeSingle();
-                    if(error || !data) throw new Error("Access Denied!");
-                    currentUser = data;
+                    // Penambahbaikan: Gunakan limit(1) untuk mengelakkan ralat maybeSingle
+                    const { data, error } = await _supabase
+                        .from(TABLE_NAME)
+                        .select('*')
+                        .eq('username', u)
+                        .eq('password', p)
+                        .limit(1);
+
+                    if(error || !data || data.length === 0) throw new Error("Access Denied!");
+                    
+                    currentUser = data[0];
                     document.getElementById('auth-section').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
                     document.getElementById('balance-amt').innerText = Number(currentUser.balance).toFixed(2);
                 }
-            } catch (err) { alert(err.message); }
-            finally { btn.innerText = mode === 'login' ? 'INITIALIZE' : 'CREATE UPLINK'; }
+            } catch (err) { 
+                alert(err.message); 
+            } finally { 
+                btn.innerText = mode === 'login' ? 'INITIALIZE' : 'CREATE UPLINK'; 
+                btn.disabled = false;
+            }
         }
 
         async function orderProcess() {
@@ -231,6 +249,7 @@
             status.style.color = "#a78bfa";
 
             try {
+                // Semak baki terkini terus dari database
                 const { data: user, error: userErr } = await _supabase
                     .from(TABLE_NAME)
                     .select('balance')
@@ -240,29 +259,29 @@
                 if(userErr || user.balance < pkg.price) {
                     status.innerText = "> ERROR: INSUFFICIENT CREDITS";
                     status.style.color = "#ef4444";
-                    btn.classList.remove('loading-pulse');
-                    btn.disabled = false;
                     return;
                 }
 
-                // MENGGUNAKAN CORSPROXY.IO (Lebih stabil daripada AllOrigins)
+                // Tukar kepada AllOrigins Proxy (Lebih Stabil)
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
                 const res = await fetch(proxyUrl);
-                if (!res.ok) throw new Error("HUBUNGAN PROXY TERPUTUS");
+                if (!res.ok) throw new Error("TALIAN PROXY SESAK");
                 
-                const apiResponse = await res.json();
+                const jsonRes = await res.json();
+                const apiResponse = JSON.parse(jsonRes.contents);
 
-                // Semak status respon dari API pembekal
-                if (apiResponse && (apiResponse.status == 1 || apiResponse.status === "success" || apiResponse.LikesGivenByAPI > 0)) {
+                if (apiResponse && (apiResponse.status == 1 || apiResponse.LikesGivenByAPI > 0)) {
                     const newBal = user.balance - pkg.price;
-                    const { error: updErr } = await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
+                    const { error: updErr } = await _supabase
+                        .from(TABLE_NAME)
+                        .update({balance: newBal})
+                        .eq('username', currentUser.username);
                     
                     if(!updErr) {
                         document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                        const injectedAmt = apiResponse.LikesGivenByAPI || pkg.name.split(' ')[0];
-                        status.innerText = `> SUCCESS: ${injectedAmt} DATA INJECTED`;
+                        status.innerText = `> SUCCESS: DATA INJECTED`;
                         status.style.color = "#22c55e";
                     } else {
                         status.innerText = "> ERROR: DATABASE SYNC FAILED";
@@ -270,13 +289,12 @@
                     }
                 } 
                 else {
-                    let errorMsg = apiResponse?.message || "PEMBEKAL SEDANG MAINTENANCE";
-                    status.innerText = `> FAILED: ${errorMsg.toUpperCase()}`;
+                    status.innerText = "> FAILED: PEMBEKAL MAINTENANCE";
                     status.style.color = "#ef4444";
                 }
 
             } catch (e) {
-                status.innerText = "> ERROR: PROXY CONNECTION REFUSED";
+                status.innerText = "> ERROR: CONNECTION REFUSED";
                 status.style.color = "#ef4444";
                 console.error(e);
             } finally { 
