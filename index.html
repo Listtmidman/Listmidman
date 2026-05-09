@@ -11,8 +11,7 @@
         .glass { background: rgba(19, 16, 31, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(167, 139, 250, 0.2); border-radius: 24px; }
         .neon-border { box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
         .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; transition: 0.3s; width: 100%; }
-        .input-field:focus { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167, 139, 250, 0.2); }
-        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; transition: 0.3s; cursor: pointer; width: 100%; }
+        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; transition: 0.3s; cursor: pointer; width: 100%; border: none; }
         .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .hidden { display: none; }
@@ -25,8 +24,8 @@
         <div class="flex flex-col space-y-4">
             <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
             <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
-            <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
-            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest">Register New Uplink</button>
+            <button onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
+            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
         </div>
         <p id="auth-msg" class="text-[10px] mt-4 text-center"></p>
     </div>
@@ -52,11 +51,11 @@
                 <option value="27">5,000 LIKES - $27.00</option>
             </select>
             <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
-            <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[60px]">
+            <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[80px]">
                 <p id="status-msg" class="text-blue-400 text-[10px] font-mono">> STANDBY...</p>
-                <p id="api-debug" class="text-gray-600 text-[8px] mt-1 break-all"></p>
+                <p id="api-debug" class="text-gray-600 text-[8px] mt-2 break-all font-mono"></p>
             </div>
-            <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20">[-] DISCONNECT SESSION</button>
+            <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20 uppercase tracking-widest">[-] Disconnect Session</button>
         </div>
     </div>
 
@@ -68,29 +67,29 @@
         let currentUser = null;
 
         async function handleAuth(type) {
-            const user = document.getElementById('auth-user').value.trim().toLowerCase();
-            const pass = document.getElementById('auth-pass').value.trim();
+            const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
+            const passInput = document.getElementById('auth-pass').value.trim();
             const msg = document.getElementById('auth-msg');
             
-            if(!user || !pass) {
-                msg.innerText = "SILA ISI SEMUA RUANGAN!";
+            if(!userInput || !passInput) {
+                msg.innerText = "SILA ISI USERNAME & PASSWORD!";
                 msg.style.color = "#ef4444";
                 return;
             }
 
             try {
                 if(type === 'register') {
-                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
+                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
                     if(exist) throw new Error("USERNAME SUDAH WUJUD!");
 
-                    const { error: insErr } = await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 1000 }]);
+                    const { error: insErr } = await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 1000 }]);
                     if(insErr) throw insErr;
                     
                     msg.style.color = "#22c55e";
                     msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
                 } else {
-                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
-                    if(error || !data) throw new Error("ID/PASSWORD SALAH!");
+                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
+                    if(error || !data) throw new Error("ID ATAU PASSWORD SALAH!");
 
                     currentUser = data;
                     document.getElementById('auth-container').classList.add('hidden');
@@ -116,36 +115,41 @@
             btn.disabled = true;
             status.innerText = "> INJECTING PAYLOAD...";
             status.style.color = "#a78bfa";
+            debug.innerText = "";
 
             try {
-                // Refresh baki terbaru dari server
-                const { data: freshUser } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                
+                const { data: freshUser, error: fetchErr } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
+                if(fetchErr) throw new Error("DATABASE_OFFLINE");
                 if(freshUser.balance < price) throw new Error("INSUFFICIENT_CREDITS");
 
+                // MENGGUNAKAN PROXY BARU: allorigins.win (Lebih stabil untuk production)
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&t=${Date.now()}`;
 
                 const response = await fetch(proxyUrl);
-                const rawData = await response.text();
-                debug.innerText = `RAW_RESPONSE: ${rawData}`;
+                if(!response.ok) throw new Error("PROXY_CONNECTION_ERROR");
 
-                let apiData = JSON.parse(rawData);
+                const result = await response.json();
+                const rawContent = result.contents; // Mengambil data dari dalam proxy
+                debug.innerText = `RAW_LOG: ${rawContent}`;
 
-                if(apiData.status == "1" || apiData.LikesGivenByAPI > 0) {
+                const apiData = JSON.parse(rawContent);
+
+                if(apiData.status == "1" || apiData.LikesGivenByAPI > 0 || apiData.message === "Success") {
                     const newBal = freshUser.balance - price;
                     await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
                     
                     document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    status.innerText = "> SUCCESS: DATA_ACCEPTED";
+                    status.innerText = "> SUCCESS: INJECTION_COMPLETE";
                     status.style.color = "#22c55e";
                 } else {
-                    status.innerText = `> REJECTED: ${apiData.message || 'API_OFFLINE'}`;
+                    status.innerText = `> REJECTED: ${apiData.message || 'SERVER_ERROR'}`;
                     status.style.color = "#fbbf24";
                 }
             } catch (e) {
                 status.innerText = `> ERROR: ${e.message.toUpperCase()}`;
                 status.style.color = "#ef4444";
+                debug.innerText = `TRACE: ${e.stack || e}`;
             } finally {
                 btn.disabled = false;
             }
