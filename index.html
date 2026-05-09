@@ -16,6 +16,9 @@
         .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .hidden { display: none; }
+        
+        /* Nickname Box Styling */
+        .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -46,7 +49,30 @@
         <div class="glass p-6 space-y-4">
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Injection Terminal</h4>
             
-            <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
+            <div class="space-y-2">
+                <div class="relative">
+                    <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field pr-20" oninput="checkNicknameDelayed()">
+                    <button onclick="checkNickname()" class="absolute right-2 top-2 text-[9px] bg-purple-900/50 px-2 py-1.5 rounded border border-purple-500 text-purple-200">SCAN</button>
+                </div>
+
+                <div id="nick-info" class="hidden nick-card p-3 rounded-xl animate-pulse">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-[9px] text-gray-400">NICKNAME:</p>
+                            <p id="res-nick" class="text-sm font-bold text-white font-mono">---</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] text-gray-400">REGION:</p>
+                            <p id="res-region" class="text-xs font-bold text-purple-400">--</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-white/5 text-center">
+                        <div><p class="text-[8px] text-gray-500 uppercase">Level</p><p id="res-lvl" class="text-xs font-bold">-</p></div>
+                        <div><p class="text-[8px] text-gray-500 uppercase">Likes</p><p id="res-likes" class="text-xs font-bold">-</p></div>
+                        <div><p class="text-[8px] text-gray-500 uppercase">Honor</p><p id="res-honor" class="text-xs font-bold">-</p></div>
+                    </div>
+                </div>
+            </div>
             
             <label class="text-[10px] text-gray-500 uppercase ml-1">Select Package Amount</label>
             <select id="package-select" class="input-field">
@@ -77,6 +103,7 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
+        let nickTimer = null;
 
         async function handleAuth(type) {
             const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
@@ -93,6 +120,7 @@
                 if(type === 'register') {
                     const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
                     if(exist) throw new Error("USERNAME SUDAH WUJUD!");
+                    // SET BALANS KEPADA 0 SUPAYA TIDAK RUGI
                     const { error: insErr } = await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0 }]);
                     if(insErr) throw insErr;
                     msg.style.color = "#22c55e";
@@ -112,6 +140,40 @@
             }
         }
 
+        // --- FUNGSI NICKNAME LOOKUP ---
+        function checkNicknameDelayed() {
+            clearTimeout(nickTimer);
+            nickTimer = setTimeout(checkNickname, 1000); // Semak automatik selepas 1 saat berhenti menaip
+        }
+
+        async function checkNickname() {
+            const uid = document.getElementById('target-uid').value;
+            const infoBox = document.getElementById('nick-info');
+            if(uid.length < 5) return;
+
+            infoBox.classList.remove('hidden');
+            document.getElementById('res-nick').innerText = "FETCHING...";
+
+            try {
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://api.ffbd.store/nickname?uid=' + uid)}`;
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                const res = JSON.parse(data.contents);
+
+                if(res[0] && res[0].nickname) {
+                    document.getElementById('res-nick').innerText = res[0].nickname;
+                    document.getElementById('res-region').innerText = res[0].region;
+                    document.getElementById('res-lvl').innerText = res[1].level;
+                    document.getElementById('res-likes').innerText = res[1].likes.toLocaleString();
+                    document.getElementById('res-honor').innerText = res[1].honor_score;
+                } else {
+                    document.getElementById('res-nick').innerText = "PLAYER NOT FOUND";
+                }
+            } catch (e) {
+                document.getElementById('res-nick').innerText = "OFFLINE";
+            }
+        }
+
         async function executeOrder() {
             const uid = document.getElementById('target-uid').value;
             const price = parseFloat(document.getElementById('package-select').value);
@@ -124,7 +186,6 @@
             btn.disabled = true;
             status.innerText = "> INJECTING PAYLOAD...";
             status.style.color = "#a78bfa";
-            debug.innerText = "";
 
             try {
                 const { data: freshUser, error: fetchErr } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
@@ -135,8 +196,6 @@
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&t=${Date.now()}`;
 
                 const response = await fetch(proxyUrl);
-                if(!response.ok) throw new Error("PROXY_CONNECTION_ERROR");
-
                 const result = await response.json();
                 const rawContent = result.contents;
                 debug.innerText = `RAW_LOG: ${rawContent}`;
@@ -145,22 +204,4 @@
 
                 if(apiData.status == "1" || apiData.LikesGivenByAPI > 0 || apiData.message === "Success") {
                     const newBal = freshUser.balance - price;
-                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
-                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    status.innerText = "> SUCCESS: INJECTION_COMPLETE";
-                    status.style.color = "#22c55e";
-                } else {
-                    status.innerText = `> REJECTED: ${apiData.message || 'SERVER_ERROR'}`;
-                    status.style.color = "#fbbf24";
-                }
-            } catch (e) {
-                status.innerText = `> ERROR: ${e.message.toUpperCase()}`;
-                status.style.color = "#ef4444";
-                debug.innerText = `TRACE: ${e.stack || e}`;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-    </script>
-</body>
-</html>
+                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username
