@@ -18,9 +18,14 @@
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
         .hidden { display: none !important; }
         .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
-        
-        /* Rank Tags */
         .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
+        
+        /* Modal Topup */
+        .modal-topup { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+        .qr-container { background: #1a1a1a; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #a78bfa; max-width: 320px; width: 100%; }
+        .qr-image { width: 100%; border-radius: 10px; margin: 15px 0; border: 4px solid white; }
+        .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 10px; font-weight: bold; color: #666; border-bottom: 2px solid transparent; cursor: pointer; }
+        .tab-btn.active { color: #a78bfa; border-bottom-2px solid #a78bfa; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -49,46 +54,64 @@
             </div>
         </div>
 
-        <div class="glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Injection Terminal</h4>
+        <div class="flex border-b border-gray-800">
+            <div id="tab-terminal" class="tab-btn active" onclick="switchTab('terminal')">TERMINAL</div>
+            <div id="tab-topup" class="tab-btn" onclick="switchTab('topup')">TOPUP CREDIT</div>
+        </div>
 
+        <div id="page-terminal" class="glass p-6 space-y-4">
+            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Injection Terminal</h4>
             <div class="space-y-2">
                 <div class="relative">
                     <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field pr-20" inputmode="numeric">
                     <button onclick="checkNickname()" class="absolute right-2 top-2 text-[9px] bg-purple-900/50 px-2 py-1.5 rounded border border-purple-500 text-purple-200">SCAN</button>
                 </div>
-
-                <div id="nick-info" class="hidden nick-card p-3 rounded-xl">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-[9px] text-gray-400">NICKNAME:</p>
-                            <p id="res-nick" class="text-sm font-bold text-white font-mono">---</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-gray-400">REGION:</p>
-                            <p id="res-region" class="text-xs font-bold text-purple-400">--</p>
-                        </div>
+                <div id="nick-info" class="hidden nick-card p-3 rounded-xl text-xs">
+                    <div class="flex justify-between">
+                        <span id="res-nick" class="font-bold text-white">---</span>
+                        <span id="res-region" class="text-purple-400">--</span>
                     </div>
-                    <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-white/5 text-center">
-                        <div><p class="text-[8px] text-gray-500 uppercase">Level</p><p id="res-lvl" class="text-xs font-bold">-</p></div>
-                        <div><p class="text-[8px] text-gray-500 uppercase">Likes</p><p id="res-likes" class="text-xs font-bold">-</p></div>
-                        <div><p class="text-[8px] text-gray-500 uppercase">Honor</p><p id="res-honor" class="text-xs font-bold">-</p></div>
+                    <div class="grid grid-cols-3 gap-1 mt-2 text-center text-[10px]">
+                        <div>Lv: <span id="res-lvl">-</span></div>
+                        <div>Likes: <span id="res-likes">-</span></div>
+                        <div>Honor: <span id="res-honor">-</span></div>
                     </div>
                 </div>
             </div>
-
             <label class="text-[10px] text-gray-500 uppercase ml-1">Select Package Amount</label>
-            <select id="package-select" class="input-field">
-                </select>
-
+            <select id="package-select" class="input-field"></select>
             <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
-
-            <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[80px]">
+            <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[60px]">
                 <p id="status-msg" class="text-blue-400 text-[10px] font-mono">&gt; STANDBY...</p>
-                <p id="api-debug" class="text-gray-600 text-[8px] mt-2 break-all font-mono hidden"></p>
             </div>
+        </div>
 
-            <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20 uppercase tracking-widest">[-] Disconnect Session</button>
+        <div id="page-topup" class="hidden glass p-6 space-y-4">
+            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
+            <select id="topup-select" class="input-field">
+                <option value="1">RM 1.00</option>
+                <option value="5">RM 5.00</option>
+                <option value="10">RM 10.00</option>
+                <option value="20">RM 20.00</option>
+                <option value="50">RM 50.00</option>
+                <option value="100">RM 100.00</option>
+                <option value="150">RM 150.00</option>
+                <option value="200">RM 200.00</option>
+            </select>
+            <button onclick="showQR()" class="btn-primary bg-green-500 hover:bg-green-400">CONFIRM TOPUP</button>
+            <p class="text-[9px] text-gray-500 text-center italic">Sila lampirkan resit di WhatsApp selepas bayaran dibuat.</p>
+        </div>
+
+        <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20 uppercase tracking-widest">[-] Disconnect Session</button>
+    </div>
+
+    <div id="qr-modal" class="modal-topup hidden">
+        <div class="qr-container">
+            <h2 class="text-white font-bold text-sm">TOUCH 'N GO eWALLET</h2>
+            <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" alt="TNG QR" class="qr-image">
+            <p id="qr-amount-txt" class="text-2xl font-black text-green-400 mb-4">RM 0.00</p>
+            <button onclick="sendWA()" class="btn-primary mb-2 bg-purple-600">HANTAR RESIT (WHATSAPP)</button>
+            <button onclick="closeQR()" class="text-xs text-gray-500 uppercase tracking-tighter">Batal</button>
         </div>
     </div>
 
@@ -96,87 +119,53 @@
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const API_BASE = "https://likeff-beast--listpagemrbeast.replit.app";
+        const WA_NUMBER = "601165406482";
 
         let currentUser = null;
-        const API_BASE = "https://likeff-beast--listpagemrbeast.replit.app";
 
-        // CONFIG HARGA MENGIKUT PANGKAT
         const PRICING_PLANS = {
-            OWNER: [
-                { val: 0.10, label: "100 LIKES - $0.10" },
-                { val: 1.50, label: "500 LIKES - $1.50" },
-                { val: 2.50, label: "1,000 LIKES - $2.50" },
-                { val: 5.50, label: "3,000 LIKES - $5.50" },
-                { val: 7.50, label: "5,000 LIKES - $7.50" },
-                { val: 9.50, label: "6,000 LIKES - $9.50" },
-                { val: 12.50, label: "10,000 LIKES - $12.50" },
-                { val: 15.50, label: "20,000 LIKES - $15.50" },
-                { val: 20.50, label: "30,000 LIKES - $20.50" }
-            ],
-            PARTNER: [
-                { val: 0.5, label: "100 LIKES - $0.50" },
-                { val: 1.5, label: "500 LIKES - $1.50" },
-                { val: 4.0, label: "1,000 LIKES - $4.00" },
-                { val: 8.0, label: "3,000 LIKES - $8.00" },
-                { val: 15.0, label: "5,000 LIKES - $15.00" },
-                { val: 25.0, label: "10,000 LIKES - $25.00" },
-                { val: 50.0, label: "20,000 LIKES - $50.00" },
-                { val: 100.0, label: "30,000 LIKES - $100.00" }
-            ],
-            RESELLER: [
-                { val: 0.8, label: "100 LIKES - $0.80" },
-                { val: 2.5, label: "500 LIKES - $2.50" },
-                { val: 5.5, label: "1,000 LIKES - $5.50" },
-                { val: 10.0, label: "3,000 LIKES - $10.00" },
-                { val: 18.0, label: "5,000 LIKES - $18.00" },
-                { val: 30.0, label: "10,000 LIKES - $30.00" },
-                { val: 60.0, label: "20,000 LIKES - $60.00" },
-                { val: 130.0, label: "30,000 LIKES - $130.00" }
-            ],
-            MEMBER: [
-                { val: 1.0, label: "100 LIKES - $1.00" },
-                { val: 3.0, label: "500 LIKES - $3.00" },
-                { val: 7.0, label: "1,000 LIKES - $7.00" },
-                { val: 12.0, label: "3,000 LIKES - $12.00" },
-                { val: 20.0, label: "5,000 LIKES - $20.00" },
-                { val: 35.0, label: "10,000 LIKES - $35.00" },
-                { val: 65.0, label: "20,000 LIKES - $65.00" },
-                { val: 150.0, label: "30,000 LIKES - $150.00" }
-            ]
+            OWNER: [{ val: 0.1, label: "100 LIKES - $0.10" }, { val: 0.5, label: "1,000 LIKES - $0.50" }],
+            PARTNER: [{ val: 4.0, label: "1,000 LIKES - $4.00" }, { val: 15.0, label: "5,000 LIKES - $15.00" }],
+            RESELLER: [{ val: 5.5, label: "1,000 LIKES - $5.50" }, { val: 18.0, label: "5,000 LIKES - $18.00" }],
+            MEMBER: [{ val: 1.0, label: "100 LIKES - $1.00" }, { val: 7.0, label: "1,000 LIKES - $7.00" }]
         };
 
-        function updatePricingDropdown(rank) {
-            const select = document.getElementById('package-select');
-            const plans = PRICING_PLANS[rank] || PRICING_PLANS.MEMBER;
-            select.innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
-        }
+        const STATUS_MSG = { '0': 'UID SALAH', '2': 'LIMIT HARIAN PENUH', '3': 'API LIMIT', '4': 'PENDING' };
 
-        function extractNickname(obj) {
-            if (!obj || typeof obj !== 'object') return null;
-            return obj.nickname || obj.PlayerNickname || obj.player_nickname || obj.name || null;
-        }
-
-        async function safeFetch(url) {
-            try {
-                const res = await fetch(url);
-                return await res.json();
-            } catch (e) {
-                throw new Error('RANGKAIAN_GAGAL');
+        function switchTab(tab) {
+            document.getElementById('page-terminal').classList.toggle('hidden', tab !== 'terminal');
+            document.getElementById('page-topup').classList.toggle('hidden', tab !== 'topup');
+            document.getElementById('tab-terminal').classList.add('active');
+            document.getElementById('tab-topup').classList.remove('active');
+            if(tab === 'topup') {
+                document.getElementById('tab-topup').classList.add('active');
+                document.getElementById('tab-terminal').classList.remove('active');
             }
         }
 
-        const STATUS_MSG = { '0': 'UID SALAH', '2': 'LIMIT HARIAN PENUH', '3': 'API LIMIT', '4': 'PENDING' };
+        function showQR() {
+            const amt = document.getElementById('topup-select').value;
+            document.getElementById('qr-amount-txt').innerText = `RM ${parseFloat(amt).toFixed(2)}`;
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+
+        function closeQR() { document.getElementById('qr-modal').classList.add('hidden'); }
+
+        function sendWA() {
+            const amt = document.getElementById('topup-select').value;
+            const user = currentUser ? currentUser.username.toUpperCase() : "USER";
+            const text = encodeURIComponent(`Halo Admin,\n\nSaya sudah buat bayaran Topup.\n\nUsername: ${user}\nJumlah: RM ${amt}\n\nSila sahkan baki saya.`);
+            window.open(`https://wa.me/${WA_NUMBER}?text=${text}`, '_blank');
+            closeQR();
+        }
 
         async function handleAuth(type) {
             const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
             const passInput = document.getElementById('auth-pass').value.trim();
             const msg = document.getElementById('auth-msg');
-
             if (!userInput || !passInput) return;
-
             msg.innerText = "CONNECTING...";
-            msg.style.color = "#a78bfa";
-
             try {
                 if (type === 'register') {
                     const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
@@ -186,55 +175,41 @@
                 } else {
                     const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
                     if (error || !data) throw new Error("ID/PASSWORD SALAH!");
-                    
                     currentUser = data;
-                    const rank = (data.rank || 'MEMBER').toUpperCase();
-                    
-                    // Update UI
                     document.getElementById('auth-container').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
                     document.getElementById('balance-amt').innerText = parseFloat(currentUser.balance).toFixed(2);
-                    
-                    // Set Rank Badge
-                    const badge = document.getElementById('user-rank');
-                    badge.innerText = rank;
-                    if(rank === 'OWNER') { badge.style.color = '#ff4d4d'; badge.style.background = 'rgba(255,77,77,0.2)'; }
-                    else if(rank === 'PARTNER') { badge.style.color = '#33ccff'; badge.style.background = 'rgba(51,204,255,0.2)'; }
-                    else if(rank === 'RESELLER') { badge.style.color = '#22c55e'; badge.style.background = 'rgba(34,197,94,0.2)'; }
-                    else { badge.style.color = '#a78bfa'; badge.style.background = 'rgba(167,139,250,0.2)'; }
-
-                    updatePricingDropdown(rank);
+                    const rank = (data.rank || 'MEMBER').toUpperCase();
+                    document.getElementById('user-rank').innerText = rank;
+                    const plans = PRICING_PLANS[rank] || PRICING_PLANS.MEMBER;
+                    document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
                 }
-            } catch (e) {
-                msg.innerText = String(e.message).toUpperCase();
-            }
+            } catch (e) { msg.innerText = String(e.message).toUpperCase(); }
+        }
+
+        async function safeFetch(url) {
+            const res = await fetch(url);
+            return await res.json();
         }
 
         async function checkNickname() {
             const uid = document.getElementById('target-uid').value.trim();
             const infoBox = document.getElementById('nick-info');
             const nickEl = document.getElementById('res-nick');
-
             if (uid.length < 5) return;
             infoBox.classList.remove('hidden');
             nickEl.innerText = "SCANNING...";
-
             try {
                 const res = await safeFetch(`${API_BASE}/api/ff/nickname?uid=${uid}`);
                 const info = Array.isArray(res) ? res[0] : res;
                 const stats = Array.isArray(res) ? res[1] : null;
-                const nick = extractNickname(info) || extractNickname(stats);
-
-                if (nick) {
-                    nickEl.innerText = nick;
-                    document.getElementById('res-region').innerText = info?.region || stats?.PlayerRegion || "--";
-                    document.getElementById('res-lvl').innerText = stats?.level || info?.level || "-";
-                    document.getElementById('res-likes').innerText = stats?.likes || info?.likes || "-";
-                    document.getElementById('res-honor').innerText = stats?.honor_score || "-";
-                } else {
-                    nickEl.innerText = "UID TIDAK DIJUMPAI";
-                }
+                const nick = info?.nickname || info?.PlayerNickname || stats?.nickname || "NOT FOUND";
+                nickEl.innerText = nick;
+                document.getElementById('res-region').innerText = info?.region || stats?.PlayerRegion || "--";
+                document.getElementById('res-lvl').innerText = stats?.level || info?.level || "-";
+                document.getElementById('res-likes').innerText = stats?.likes || info?.likes || "-";
+                document.getElementById('res-honor').innerText = stats?.honor_score || "-";
             } catch (e) { nickEl.innerText = "ERROR SCAN"; }
         }
 
@@ -243,26 +218,21 @@
             const price = parseFloat(document.getElementById('package-select').value);
             const statusEl = document.getElementById('status-msg');
             const btn = document.getElementById('order-btn');
-
             if (!uid) return alert("Masukkan UID!");
             btn.disabled = true;
-            statusEl.innerText = "> INITIALIZING...";
-
+            statusEl.innerText = "> PROSESS SEBENTAR...";
             try {
                 const { data: freshUser } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                 if (parseFloat(freshUser.balance) < price) throw new Error("KREDIT TIDAK MENCUKUPI");
-
                 const apiData = await safeFetch(`${API_BASE}/api/ff/likes?uid=${uid}`);
-                const apiStatus = String(apiData.status || "");
-
-                if (apiStatus === "1" || apiData.message === "Success") {
+                if (String(apiData.status) === "1" || apiData.message === "Success") {
                     const newBal = parseFloat(freshUser.balance) - price;
                     await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
                     document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    statusEl.innerText = `> SUCCESS: INJECTION COMPLETE`;
+                    statusEl.innerText = "> SUCCESS: INJECTION COMPLETE";
                     statusEl.style.color = "#22c55e";
                 } else {
-                    statusEl.innerText = `> REJECTED: ${STATUS_MSG[apiStatus] || 'SERVER BUSY'}`;
+                    statusEl.innerText = `> REJECTED: ${STATUS_MSG[apiData.status] || 'SERVER BUSY'}`;
                     statusEl.style.color = "#fbbf24";
                 }
             } catch (e) {
