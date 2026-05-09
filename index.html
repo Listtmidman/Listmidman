@@ -10,10 +10,9 @@
         body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Courier New', monospace; }
         .glass-card { background: rgba(19, 16, 31, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(167, 139, 250, 0.2); }
         .neon-text { text-shadow: 0 0 10px #a78bfa; }
-        .btn-execute { border: 2px solid #a78bfa; color: #a78bfa; transition: 0.3s; cursor: pointer; }
+        .btn-execute { border: 2px solid #a78bfa; color: #a78bfa; transition: 0.3s; }
         .btn-execute:hover:not(:disabled) { background: #a78bfa; color: white; box-shadow: 0 0 20px #a78bfa; }
-        .btn-execute:disabled { opacity: 0.5; cursor: not-allowed; }
-        .status-log { background: #000; border: 1px solid #333; padding: 10px; font-size: 10px; border-radius: 8px; min-height: 50px; overflow-wrap: break-word; }
+        .status-log { background: #000; border: 1px solid #333; padding: 10px; font-size: 10px; border-radius: 8px; }
     </style>
 </head>
 <body class="p-4 flex flex-col items-center">
@@ -45,7 +44,7 @@
             
             <div class="status-log">
                 <p id="status-msg" class="text-blue-400">> STANDBY...</p>
-                <p id="api-debug" class="text-gray-500 mt-2 font-mono" style="font-size: 9px;"></p>
+                <p id="api-debug" class="text-gray-600 mt-1 opacity-50 text-[8px]"></p>
             </div>
         </div>
     </div>
@@ -62,57 +61,45 @@
             const debug = document.getElementById('api-debug');
             const btn = document.getElementById('order-btn');
 
-            if(!uid) return alert("Sila masukkan UID!");
+            if(!uid) return alert("UID Kosong!");
 
             btn.disabled = true;
             status.innerText = "> INJECTING PAYLOAD...";
             status.style.color = "#a78bfa";
-            debug.innerText = "";
 
             try {
-                // 1. Semak Baki di Database
-                const { data: user, error: dbError } = await _supabase.from('database panel').select('balance').eq('username', 'ipanzz').single();
+                // 1. Ambil Data Terkini dari Database
+                const { data: user } = await _supabase.from('database panel').select('balance').eq('username', 'ipanzz').single();
                 
-                if(dbError || !user) throw new Error("DATABASE_CONNECTION_ERROR");
                 if(user.balance < price) throw new Error("INSUFFICIENT_CREDITS");
 
-                // 2. Request ke API Samiul menggunakan Proxy lain (Corsproxy.io) untuk elak 'Load Failed'
+                // 2. Hubungi API (Gunakan AllOrigins dengan cache-breaker)
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&t=${Date.now()}`;
 
                 const response = await fetch(proxyUrl);
+                const result = await response.json();
                 
-                if (!response.ok) throw new Error(`SERVER_REJECTED (${response.status})`);
+                // 3. Check Logs (Response API) seperti yang diminta Samiul
+                debug.innerText = `RAW_RESPONSE: ${result.contents}`;
+                
+                const apiData = JSON.parse(result.contents);
 
-                const rawData = await response.text();
-                debug.innerText = `RAW_LOG: ${rawData}`; // Tunjukkan pada Samiul jika error
-
-                let apiData;
-                try {
-                    apiData = JSON.parse(rawData);
-                } catch (e) {
-                    throw new Error("INVALID_API_RESPONSE_FORMAT");
-                }
-
-                // 3. Logik Kejayaan API
-                if(apiData.status == "1" || apiData.LikesGivenByAPI > 0 || apiData.message === "Success") {
-                    // Tolak baki dalam database
+                if(apiData.status == "1" || apiData.LikesGivenByAPI > 0) {
+                    // Berjaya
                     const newBal = user.balance - price;
-                    const { error: upError } = await _supabase.from('database panel').update({ balance: newBal }).eq('username', 'ipanzz');
+                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', 'ipanzz');
                     
-                    if (upError) throw new Error("SYNC_ERROR");
-
                     document.getElementById('balance-amt').innerText = newBal.toFixed(2);
                     status.innerText = "> SUCCESS: DATA_ACCEPTED";
                     status.style.color = "#22c55e";
                 } else {
-                    // API Reject (Maintenance / Invalid UID)
-                    status.innerText = `> REJECTED: ${apiData.message || 'API_OFFLINE'}`;
+                    // API Ralat (Maintenance/Key Invalid)
+                    status.innerText = `> API_REJECTED: ${apiData.message || 'MAINTENANCE'}`;
                     status.style.color = "#fbbf24";
                 }
 
             } catch (e) {
-                console.error(e);
                 status.innerText = `> ERROR: ${e.message}`;
                 status.style.color = "#ef4444";
             } finally {
