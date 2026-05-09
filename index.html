@@ -12,12 +12,10 @@
         .neon-border { box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
         .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; width: 100%; transition: 0.3s; }
         .input-field:focus { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167, 139, 250, 0.2); }
-        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; border: none; }
+        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; border: none; display: block; text-align: center; }
         .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .hidden { display: none; }
-        
-        /* Nickname Box Styling */
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .hidden { display: none !important; }
         .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
     </style>
 </head>
@@ -28,7 +26,7 @@
         <div class="flex flex-col space-y-4">
             <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
             <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
-            <button onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
+            <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
             <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
         </div>
         <p id="auth-msg" class="text-[10px] mt-4 text-center"></p>
@@ -51,11 +49,11 @@
             
             <div class="space-y-2">
                 <div class="relative">
-                    <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field pr-20" oninput="checkNicknameDelayed()">
+                    <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field pr-20">
                     <button onclick="checkNickname()" class="absolute right-2 top-2 text-[9px] bg-purple-900/50 px-2 py-1.5 rounded border border-purple-500 text-purple-200">SCAN</button>
                 </div>
 
-                <div id="nick-info" class="hidden nick-card p-3 rounded-xl animate-pulse">
+                <div id="nick-info" class="hidden nick-card p-3 rounded-xl">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-[9px] text-gray-400">NICKNAME:</p>
@@ -103,7 +101,6 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
-        let nickTimer = null;
 
         async function handleAuth(type) {
             const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
@@ -120,7 +117,6 @@
                 if(type === 'register') {
                     const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
                     if(exist) throw new Error("USERNAME SUDAH WUJUD!");
-                    // SET BALANS KEPADA 0 SUPAYA TIDAK RUGI
                     const { error: insErr } = await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0 }]);
                     if(insErr) throw insErr;
                     msg.style.color = "#22c55e";
@@ -128,6 +124,7 @@
                 } else {
                     const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
                     if(error || !data) throw new Error("ID ATAU PASSWORD SALAH!");
+                    
                     currentUser = data;
                     document.getElementById('auth-container').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
@@ -140,19 +137,13 @@
             }
         }
 
-        // --- FUNGSI NICKNAME LOOKUP ---
-        function checkNicknameDelayed() {
-            clearTimeout(nickTimer);
-            nickTimer = setTimeout(checkNickname, 1000); // Semak automatik selepas 1 saat berhenti menaip
-        }
-
         async function checkNickname() {
             const uid = document.getElementById('target-uid').value;
             const infoBox = document.getElementById('nick-info');
-            if(uid.length < 5) return;
+            if(!uid || uid.length < 5) return alert("Sila masukkan UID yang sah!");
 
             infoBox.classList.remove('hidden');
-            document.getElementById('res-nick').innerText = "FETCHING...";
+            document.getElementById('res-nick').innerText = "SCANNING...";
 
             try {
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://api.ffbd.store/nickname?uid=' + uid)}`;
@@ -167,41 +158,60 @@
                     document.getElementById('res-likes').innerText = res[1].likes.toLocaleString();
                     document.getElementById('res-honor').innerText = res[1].honor_score;
                 } else {
-                    document.getElementById('res-nick').innerText = "PLAYER NOT FOUND";
+                    document.getElementById('res-nick').innerText = "NOT FOUND";
                 }
             } catch (e) {
-                document.getElementById('res-nick').innerText = "OFFLINE";
+                document.getElementById('res-nick').innerText = "ERROR";
             }
         }
 
         async function executeOrder() {
-            const uid = document.getElementById('target-uid').value;
+            const uidInput = document.getElementById('target-uid');
+            const uid = uidInput.value;
             const price = parseFloat(document.getElementById('package-select').value);
             const status = document.getElementById('status-msg');
             const debug = document.getElementById('api-debug');
             const btn = document.getElementById('order-btn');
 
-            if(!uid) return alert("Sila masukkan UID!");
+            if(!uid) return alert("Masukkan UID!");
 
             btn.disabled = true;
-            status.innerText = "> INJECTING PAYLOAD...";
+            status.innerText = "> INITIALIZING INJECTION...";
             status.style.color = "#a78bfa";
 
             try {
+                // Ambil baki terbaru dari DB
                 const { data: freshUser, error: fetchErr } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                if(fetchErr) throw new Error("DATABASE_OFFLINE");
+                
+                if(fetchErr || !freshUser) throw new Error("DATABASE_SYNC_FAILED");
                 if(freshUser.balance < price) throw new Error("INSUFFICIENT_CREDITS");
 
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&t=${Date.now()}`;
 
-                const response = await fetch(proxyUrl);
-                const result = await response.json();
-                const rawContent = result.contents;
-                debug.innerText = `RAW_LOG: ${rawContent}`;
+                const resp = await fetch(proxyUrl);
+                const result = await resp.json();
+                const apiData = JSON.parse(result.contents);
 
-                const apiData = JSON.parse(rawContent);
-
-                if(apiData.status == "1" || apiData.LikesGivenByAPI > 0 || apiData.message === "Success") {
+                if(apiData.status == "1" || apiData.message === "Success") {
                     const newBal = freshUser.balance - price;
-                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username
+                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
+                    
+                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
+                    status.innerText = "> SUCCESS: INJECTION COMPLETE";
+                    status.style.color = "#22c55e";
+                    debug.innerText = `LOG: ${JSON.stringify(apiData)}`;
+                } else {
+                    status.innerText = `> REJECTED: ${apiData.message || 'API_ERROR'}`;
+                    status.style.color = "#fbbf24";
+                }
+            } catch (e) {
+                status.innerText = `> ERROR: ${e.message.toUpperCase()}`;
+                status.style.color = "#ef4444";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
