@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeastPanel - Boost Likeff</title>
+    <title>BeastPanel - Maximum Injection</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -29,10 +29,10 @@
         }
 
         .glass-card {
-            background: rgba(19, 16, 31, 0.8);
-            backdrop-filter: blur(12px);
+            background: rgba(19, 16, 31, 0.85);
+            backdrop-filter: blur(15px);
             border: 1px solid rgba(167, 139, 250, 0.2);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
         }
 
         .neon-text {
@@ -41,27 +41,37 @@
 
         .neon-border-focus:focus {
             border-color: var(--purple-glow) !important;
-            box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.5);
         }
 
-        .btn-glow:hover {
-            box-shadow: 0 0 20px rgba(167, 139, 250, 0.6);
+        .btn-glow:hover:not(:disabled) {
+            box-shadow: 0 0 25px rgba(167, 139, 250, 0.7);
             transform: translateY(-2px);
         }
 
+        .btn-glow:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
         input, select {
-            background: rgba(0, 0, 0, 0.7) !important;
+            background: rgba(0, 0, 0, 0.8) !important;
             border: 1px solid #2d2944 !important;
             transition: all 0.3s ease;
         }
 
         .loading-pulse {
-            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.98); }
+        }
+
+        .status-box {
+            background: rgba(0, 0, 0, 0.6);
+            border-left: 3px solid #3b82f6;
+            transition: all 0.5s ease;
         }
     </style>
 </head>
@@ -69,26 +79,26 @@
 
     <canvas id="matrix-canvas"></canvas>
 
-    <div id="auth-section" class="w-full max-w-md glass-card mt-12 p-8 rounded-3xl transition-all duration-500">
-        <h2 class="text-4xl font-black text-center mb-2 text-purple-400 italic neon-text">BEAST PANEL</h2>
-        <p class="text-center text-[10px] text-purple-300/50 tracking-[0.3em] mb-8 uppercase">Hacker Protocol Enabled</p>
+    <div id="auth-section" class="w-full max-w-md glass-card mt-12 p-8 rounded-3xl transition-all duration-500 transform">
+        <h2 class="text-4xl font-black text-center mb-2 text-purple-400 italic neon-text tracking-tighter">BEAST PANEL</h2>
+        <p class="text-center text-[10px] text-purple-300/50 tracking-[0.4em] mb-8 uppercase">V3.5 Security Override Enabled</p>
         
         <div class="flex mb-8 border-b border-gray-800/50">
-            <button id="login-tab" onclick="switchAuth('login')" class="flex-1 pb-3 text-sm font-bold transition-all duration-300 border-b-2 border-purple-500 neon-text">SYSTEM ACCESS</button>
-            <button id="register-tab" onclick="switchAuth('register')" class="flex-1 pb-3 text-sm font-bold text-gray-600 transition-all duration-300">NEW UPLINK</button>
+            <button id="login-tab" onclick="switchAuth('login')" class="flex-1 pb-3 text-xs font-bold transition-all duration-300 border-b-2 border-purple-500 neon-text">SYSTEM ACCESS</button>
+            <button id="register-tab" onclick="switchAuth('register')" class="flex-1 pb-3 text-xs font-bold text-gray-600 transition-all duration-300">NEW UPLINK</button>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-5">
             <div class="relative">
                 <input id="auth-user" type="text" placeholder="Username" class="w-full p-4 rounded-xl text-white outline-none neon-border-focus pl-12">
-                <span class="absolute left-4 top-4 opacity-30">👤</span>
+                <span class="absolute left-4 top-4.5 opacity-40">👤</span>
             </div>
             <div class="relative">
                 <input id="auth-pass" type="password" placeholder="Password" class="w-full p-4 rounded-xl text-white outline-none neon-border-focus pl-12">
-                <span class="absolute left-4 top-4 opacity-30">🔑</span>
+                <span class="absolute left-4 top-4.5 opacity-40">🔑</span>
             </div>
             
-            <button id="auth-btn" onclick="handleAuth()" class="w-full bg-purple-600 text-white hover:bg-purple-500 p-4 rounded-xl font-black text-lg tracking-widest btn-glow transition-all mt-2">
+            <button id="auth-btn" onclick="handleAuth()" class="w-full bg-purple-600 text-white p-4 rounded-xl font-black text-lg tracking-widest btn-glow transition-all mt-2">
                 INITIALIZE
             </button>
         </div>
@@ -97,72 +107,72 @@
     <div id="main-dashboard" class="w-full max-w-md hidden space-y-4">
         <div class="glass-card p-6 rounded-3xl border-l-4 border-l-purple-500 flex justify-between items-center mt-6">
             <div>
-                <p class="text-purple-400 text-[10px] font-bold tracking-tighter uppercase">Subject ID</p>
-                <h3 id="display-name" class="text-xl font-bold text-white tracking-widest">---</h3>
+                <p class="text-purple-400 text-[10px] font-bold tracking-tighter uppercase opacity-70">Subject ID</p>
+                <h3 id="display-name" class="text-xl font-black text-white tracking-widest">---</h3>
             </div>
             <div class="text-right">
-                <p class="text-green-400 text-[10px] font-bold tracking-tighter uppercase">Available Credits</p>
+                <p class="text-green-400 text-[10px] font-bold tracking-tighter uppercase opacity-70">Available Credits</p>
                 <p class="text-green-400 text-3xl font-black neon-text">$<span id="balance-amt">0.00</span></p>
             </div>
         </div>
 
         <div class="glass-card p-6 rounded-3xl space-y-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-2 opacity-10 text-[8px]">V.3.1_ENCRYPTED</div>
-            <h4 class="font-bold text-purple-300 uppercase text-xs tracking-[0.2em] text-center mb-2">Injection Terminal</h4>
+            <div class="absolute top-0 right-0 p-2 opacity-20 text-[8px] font-mono">ENCRYPTED_UPLINK_STABLE</div>
+            <h4 class="font-bold text-purple-300 uppercase text-xs tracking-[0.3em] text-center mb-2">Injection Terminal</h4>
             
             <div class="space-y-4">
                 <div>
                     <label class="text-[10px] text-gray-500 ml-1 uppercase tracking-widest">Target UID</label>
-                    <input id="target-uid" type="text" placeholder="Enter Player ID" class="w-full p-4 rounded-xl text-white mt-1 neon-border-focus font-mono">
+                    <input id="target-uid" type="number" placeholder="Enter Player ID" class="w-full p-4 rounded-xl text-white mt-1 neon-border-focus font-mono text-lg">
                 </div>
                 <div>
-                    <label class="text-[10px] text-gray-500 ml-1 uppercase tracking-widest">Data Packet Size</label>
-                    <select id="package-select" class="w-full p-4 rounded-xl text-white mt-1 neon-border-focus"></select>
+                    <label class="text-[10px] text-gray-500 ml-1 uppercase tracking-widest">Payload Magnitude</label>
+                    <select id="package-select" class="w-full p-4 rounded-xl text-white mt-1 neon-border-focus appearance-none"></select>
                 </div>
-                <button id="order-btn" onclick="orderProcess()" class="w-full bg-transparent border-2 border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white p-4 rounded-2xl font-black text-lg tracking-widest transition-all btn-glow">EXECUTE ORDER</button>
+                <button id="order-btn" onclick="orderProcess()" class="w-full bg-transparent border-2 border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white p-4 rounded-2xl font-black text-lg tracking-widest transition-all btn-glow uppercase">Execute Order</button>
             </div>
             
-            <div class="mt-4 p-3 bg-black/50 rounded-lg border border-gray-800">
-                <p id="status-msg" class="text-center text-[11px] font-mono min-h-[16px] tracking-tight uppercase">Terminal Ready...</p>
+            <div class="mt-2 p-4 status-box rounded-xl">
+                <p id="status-msg" class="text-center text-[10px] font-mono min-h-[16px] tracking-tight uppercase text-blue-400">Terminal Ready. Awaiting Command...</p>
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <button onclick="window.open('https://wa.me/601165406482?text=Nak+Topup')" class="bg-green-900/30 border border-green-500/50 text-green-400 p-4 rounded-2xl font-bold text-xs tracking-widest hover:bg-green-500 hover:text-black transition-all">
-                [+] UPLOAD CREDITS
+            <button onclick="window.open('https://wa.me/601165406482?text=Nak+Topup')" class="bg-green-900/30 border border-green-500/50 text-green-400 p-4 rounded-2xl font-bold text-[10px] tracking-widest hover:bg-green-500 hover:text-black transition-all uppercase">
+                [+] Upload Credits
             </button>
-            <button onclick="location.reload()" class="bg-red-900/20 border border-red-500/50 text-red-400 p-4 rounded-2xl font-bold text-xs tracking-widest hover:bg-red-500 hover:text-black transition-all">
-                [-] DISCONNECT
+            <button onclick="location.reload()" class="bg-red-900/20 border border-red-500/50 text-red-400 p-4 rounded-2xl font-bold text-[10px] tracking-widest hover:bg-red-500 hover:text-black transition-all uppercase">
+                [-] Disconnect
             </button>
         </div>
     </div>
 
     <script>
-        // Matrix Animation
+        // Matrix Background Logic
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%";
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
         const fontSize = 16;
         const columns = canvas.width / fontSize;
         const drops = Array(Math.floor(columns)).fill(1);
 
         function drawMatrix() {
-            ctx.fillStyle = "rgba(10, 10, 10, 0.05)";
+            ctx.fillStyle = "rgba(10, 10, 10, 0.08)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#a78bfa";
             ctx.font = fontSize + "px monospace";
             for (let i = 0; i < drops.length; i++) {
                 const text = letters.charAt(Math.floor(Math.random() * letters.length));
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.98) drops[i] = 0;
                 drops[i]++;
             }
         }
         setInterval(drawMatrix, 50);
 
-        // Supabase Configuration
+        // Core Configuration
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"; 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -179,18 +189,27 @@
             { name: "10,000 LIKES", price: 45.00 }
         ];
 
+        // Init Packages
         const pkgSelect = document.getElementById('package-select');
         packages.forEach((pkg, i) => {
             let opt = document.createElement('option');
             opt.value = i;
-            opt.innerHTML = `${pkg.name} > $${pkg.price.toFixed(2)}`;
+            opt.innerHTML = `${pkg.name} — $${pkg.price.toFixed(2)}`;
             pkgSelect.appendChild(opt);
         });
 
         function switchAuth(m) {
             mode = m;
-            document.getElementById('login-tab').className = m === 'login' ? 'flex-1 pb-3 text-sm font-bold transition-all duration-300 border-b-2 border-purple-500 neon-text' : 'flex-1 pb-3 text-sm font-bold text-gray-600 transition-all duration-300';
-            document.getElementById('register-tab').className = m === 'register' ? 'flex-1 pb-3 text-sm font-bold transition-all duration-300 border-b-2 border-purple-500 neon-text' : 'flex-1 pb-3 text-sm font-bold text-gray-600 transition-all duration-300';
+            const tabs = {
+                login: document.getElementById('login-tab'),
+                register: document.getElementById('register-tab')
+            };
+            
+            Object.keys(tabs).forEach(k => {
+                tabs[k].className = k === m 
+                    ? 'flex-1 pb-3 text-xs font-bold transition-all duration-300 border-b-2 border-purple-500 neon-text' 
+                    : 'flex-1 pb-3 text-xs font-bold text-gray-600 transition-all duration-300';
+            });
             document.getElementById('auth-btn').innerText = m === 'login' ? 'INITIALIZE' : 'CREATE UPLINK';
         }
 
@@ -199,7 +218,7 @@
             const p = document.getElementById('auth-pass').value.trim();
             const btn = document.getElementById('auth-btn');
             
-            if(!u || !p) return alert("Missing Credentials!");
+            if(!u || !p) return alert("System Error: Credentials Missing.");
             
             btn.innerText = "AUTHENTICATING...";
             btn.disabled = true;
@@ -207,11 +226,10 @@
             try {
                 if(mode === 'register') {
                     const { error } = await _supabase.from(TABLE_NAME).insert([{username: u, password: p, balance: 0}]);
-                    if(error) throw new Error("Link Failed!");
-                    alert("Account Created. Secure Login Now.");
+                    if(error) throw new Error("Uplink creation failed.");
+                    alert("Uplink Established. You may now login.");
                     switchAuth('login');
                 } else {
-                    // Penambahbaikan: Gunakan limit(1) untuk mengelakkan ralat maybeSingle
                     const { data, error } = await _supabase
                         .from(TABLE_NAME)
                         .select('*')
@@ -219,7 +237,7 @@
                         .eq('password', p)
                         .limit(1);
 
-                    if(error || !data || data.length === 0) throw new Error("Access Denied!");
+                    if(error || !data || data.length === 0) throw new Error("Invalid Access Code.");
                     
                     currentUser = data[0];
                     document.getElementById('auth-section').classList.add('hidden');
@@ -240,16 +258,22 @@
             const pkg = packages[document.getElementById('package-select').value];
             const status = document.getElementById('status-msg');
             const btn = document.getElementById('order-btn');
+            const statusBox = document.querySelector('.status-box');
 
-            if(!uid) return alert("UID Diperlukan!");
+            if(!uid) {
+                status.innerText = "> ERROR: UID_TARGET_REQUIRED";
+                status.style.color = "#ef4444";
+                return;
+            }
             
             btn.classList.add('loading-pulse');
             btn.disabled = true;
-            status.innerText = "> MENGHUBUNGKAN KE SATELIT...";
+            status.innerText = "> ESTABLISHING PROXY UPLINK...";
             status.style.color = "#a78bfa";
+            statusBox.style.borderColor = "#a78bfa";
 
             try {
-                // Semak baki terkini terus dari database
+                // Check Balance directly from server
                 const { data: user, error: userErr } = await _supabase
                     .from(TABLE_NAME)
                     .select('balance')
@@ -257,21 +281,23 @@
                     .single();
                 
                 if(userErr || user.balance < pkg.price) {
-                    status.innerText = "> ERROR: INSUFFICIENT CREDITS";
+                    status.innerText = "> FATAL: INSUFFICIENT_CREDITS";
                     status.style.color = "#ef4444";
+                    statusBox.style.borderColor = "#ef4444";
                     return;
                 }
 
-                // Tukar kepada AllOrigins Proxy (Lebih Stabil)
+                // Proxy & API Call (AllOrigins - Better Uptime)
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&timestamp=${Date.now()}`;
 
                 const res = await fetch(proxyUrl);
-                if (!res.ok) throw new Error("TALIAN PROXY SESAK");
+                if (!res.ok) throw new Error("PROXY_REFUSED");
                 
                 const jsonRes = await res.json();
                 const apiResponse = JSON.parse(jsonRes.contents);
 
+                // Validation logic (Stronger check)
                 if (apiResponse && (apiResponse.status == 1 || apiResponse.LikesGivenByAPI > 0)) {
                     const newBal = user.balance - pkg.price;
                     const { error: updErr } = await _supabase
@@ -281,22 +307,23 @@
                     
                     if(!updErr) {
                         document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                        status.innerText = `> SUCCESS: DATA INJECTED`;
+                        status.innerText = `> SUCCESS: PACKET_${pkg.name}_INJECTED`;
                         status.style.color = "#22c55e";
+                        statusBox.style.borderColor = "#22c55e";
                     } else {
-                        status.innerText = "> ERROR: DATABASE SYNC FAILED";
-                        status.style.color = "#ef4444";
+                        throw new Error("DB_SYNC_FAILURE");
                     }
-                } 
-                else {
-                    status.innerText = "> FAILED: PEMBEKAL MAINTENANCE";
-                    status.style.color = "#ef4444";
+                } else {
+                    status.innerText = "> ERROR: API_PROVIDER_MAINTENANCE";
+                    status.style.color = "#fbbf24";
+                    statusBox.style.borderColor = "#fbbf24";
                 }
 
             } catch (e) {
-                status.innerText = "> ERROR: CONNECTION REFUSED";
+                status.innerText = "> ERROR: CONNECTION_REJECTED_BY_SERVER";
                 status.style.color = "#ef4444";
-                console.error(e);
+                statusBox.style.borderColor = "#ef4444";
+                console.error("System Log:", e);
             } finally { 
                 btn.classList.remove('loading-pulse'); 
                 btn.disabled = false;
