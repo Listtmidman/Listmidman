@@ -20,12 +20,11 @@
         .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
         .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
         
-        /* Modal Topup */
         .modal-topup { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
         .qr-container { background: #1a1a1a; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #a78bfa; max-width: 320px; width: 100%; }
         .qr-image { width: 100%; border-radius: 10px; margin: 15px 0; border: 4px solid white; }
         .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 10px; font-weight: bold; color: #666; border-bottom: 2px solid transparent; cursor: pointer; }
-        .tab-btn.active { color: #a78bfa; border-bottom-2px solid #a78bfa; }
+        .tab-btn.active { color: #a78bfa; border-bottom: 2px solid #a78bfa; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -124,11 +123,38 @@
 
         let currentUser = null;
 
+        // HARGA IKUT PANGKAT (100 - 30k Likes)
         const PRICING_PLANS = {
-            OWNER: [{ val: 0.1, label: "100 LIKES - $0.10" }, { val: 0.5, label: "1,000 LIKES - $0.50" }],
-            PARTNER: [{ val: 4.0, label: "1,000 LIKES - $4.00" }, { val: 15.0, label: "5,000 LIKES - $15.00" }],
-            RESELLER: [{ val: 5.5, label: "1,000 LIKES - $5.50" }, { val: 18.0, label: "5,000 LIKES - $18.00" }],
-            MEMBER: [{ val: 1.0, label: "100 LIKES - $1.00" }, { val: 7.0, label: "1,000 LIKES - $7.00" }]
+            OWNER: [
+                { val: 0.10, label: "100 LIKES - $0.10" },
+                { val: 0.40, label: "500 LIKES - $0.40" },
+                { val: 0.80, label: "1,000 LIKES - $0.80" },
+                { val: 2.00, label: "3,000 LIKES - $2.00" },
+                { val: 3.50, label: "5,000 LIKES - $3.50" },
+                { val: 6.00, label: "10,000 LIKES - $6.00" },
+                { val: 11.00, label: "20,000 LIKES - $11.00" },
+                { val: 15.00, label: "30,000 LIKES - $15.00" }
+            ],
+            RESELLER: [
+                { val: 0.50, label: "100 LIKES - $0.50" },
+                { val: 2.00, label: "500 LIKES - $2.00" },
+                { val: 4.00, label: "1,000 LIKES - $4.00" },
+                { val: 10.00, label: "3,000 LIKES - $10.00" },
+                { val: 16.00, label: "5,000 LIKES - $16.00" },
+                { val: 30.00, label: "10,000 LIKES - $30.00" },
+                { val: 55.00, label: "20,000 LIKES - $55.00" },
+                { val: 80.00, label: "30,000 LIKES - $80.00" }
+            ],
+            MEMBER: [
+                { val: 1.00, label: "100 LIKES - $1.00" },
+                { val: 3.50, label: "500 LIKES - $3.50" },
+                { val: 7.00, label: "1,000 LIKES - $7.00" },
+                { val: 18.00, label: "3,000 LIKES - $18.00" },
+                { val: 25.00, label: "5,000 LIKES - $25.00" },
+                { val: 45.00, label: "10,000 LIKES - $45.00" },
+                { val: 85.00, label: "20,000 LIKES - $85.00" },
+                { val: 120.00, label: "30,000 LIKES - $120.00" }
+            ]
         };
 
         const STATUS_MSG = { '0': 'UID SALAH', '2': 'LIMIT HARIAN PENUH', '3': 'API LIMIT', '4': 'PENDING' };
@@ -136,12 +162,8 @@
         function switchTab(tab) {
             document.getElementById('page-terminal').classList.toggle('hidden', tab !== 'terminal');
             document.getElementById('page-topup').classList.toggle('hidden', tab !== 'topup');
-            document.getElementById('tab-terminal').classList.add('active');
-            document.getElementById('tab-topup').classList.remove('active');
-            if(tab === 'topup') {
-                document.getElementById('tab-topup').classList.add('active');
-                document.getElementById('tab-terminal').classList.remove('active');
-            }
+            document.getElementById('tab-terminal').className = tab === 'terminal' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-topup').className = tab === 'topup' ? 'tab-btn active' : 'tab-btn';
         }
 
         function showQR() {
@@ -180,8 +202,16 @@
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
                     document.getElementById('balance-amt').innerText = parseFloat(currentUser.balance).toFixed(2);
+                    
                     const rank = (data.rank || 'MEMBER').toUpperCase();
-                    document.getElementById('user-rank').innerText = rank;
+                    const badge = document.getElementById('user-rank');
+                    badge.innerText = rank;
+                    
+                    // Warna ikut pangkat
+                    if(rank==='OWNER') badge.style.color='#ff4d4d';
+                    else if(rank==='RESELLER') badge.style.color='#22c55e';
+                    else badge.style.color='#a78bfa';
+
                     const plans = PRICING_PLANS[rank] || PRICING_PLANS.MEMBER;
                     document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
                 }
