@@ -93,7 +93,7 @@
                 if(type === 'register') {
                     const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
                     if(exist) throw new Error("USERNAME SUDAH WUJUD!");
-                    const { error: insErr } = await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 1000 }]);
+                    const { error: insErr } = await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0 }]);
                     if(insErr) throw insErr;
                     msg.style.color = "#22c55e";
                     msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
