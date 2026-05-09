@@ -1,217 +1,143 @@
-<!DOCTYPE html>
-<html lang="ms">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeastPanel - Cloud Access</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Courier New', monospace; }
-        .glass { background: rgba(19, 16, 31, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(167, 139, 250, 0.2); border-radius: 24px; }
-        .neon-border { box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
-        .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; width: 100%; transition: 0.3s; }
-        .input-field:focus { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167, 139, 250, 0.2); }
-        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; border: none; display: block; text-align: center; }
-        .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-        .hidden { display: none !important; }
-        .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
-    </style>
-</head>
-<body class="flex items-center justify-center min-h-screen p-4">
+import { useState, useEffect } from "react";
+import { Flame } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-    <div id="auth-container" class="w-full max-w-md glass p-8 neon-border">
-        <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
-        <div class="flex flex-col space-y-4">
-            <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
-            <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
-            <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
-            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
-        </div>
-        <p id="auth-msg" class="text-[10px] mt-4 text-center"></p>
+const WHATSAPP = "601165406482";
+const PACKAGES = [
+  { id: "1k", name: "1,000 Likes", likes: 1000, price: 7.00 },
+  { id: "5k", name: "5,000 Likes", likes: 5000, price: 21.00 },
+  { id: "10k", name: "10,000 Likes", likes: 10000, price: 40.00 },
+];
+
+export default function Home() {
+  const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const [step, setStep] = useState(1);
+  const [ffId, setFfId] = useState("");
+  const [username, setUsername] = useState("");
+  const [server, setServer] = useState("");
+  const [nicknameLoading, setNicknameLoading] = useState(false);
+  const [apiStatus, setApiStatus] = useState<"idle" | "success" | "failed">("idle");
+
+  // LOGIK SEMAK UID DENGAN FALLBACK MANUAL
+  useEffect(() => {
+    if (ffId.length < 5) {
+      setApiStatus("idle");
+      return;
+    }
+
+    setNicknameLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://api.ffbd.store/nickname?uid=${ffId}`);
+        const data = await res.json();
+        const result = Array.isArray(data) ? data[0] : data;
+
+        if (result && result.nickname) {
+          setUsername(result.nickname);
+          setApiStatus("success");
+        } else {
+          setApiStatus("failed");
+        }
+      } catch (err) {
+        console.log("API Error - Membenarkan input manual.");
+        setApiStatus("failed");
+      } finally {
+        setNicknameLoading(false);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [ffId]);
+
+  const handleConfirm = () => {
+    const msg = `*ORDER FF LIKES*\nID: ${ffId}\nName: ${username}\nPackage: ${selectedPackage?.name}\nServer: ${server}`;
+    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank");
+    setStep(1); // Reset balik
+    setSelectedPackage(null);
+  };
+
+  // Butang aktif jika maklumat asas lengkap, tak kira API berjaya atau tidak
+  const isReady = ffId.length >= 5 && username.length >= 2 && server !== "";
+
+  return (
+    <div className="min-h-screen bg-black text-white p-4">
+      <nav className="flex justify-between items-center py-4 border-b border-white/10 mb-10">
+        <div className="flex items-center gap-2 font-bold"><Flame className="text-blue-500" /> FF LIKES</div>
+      </nav>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+        {PACKAGES.map(pkg => (
+          <div key={pkg.id} className="p-6 bg-zinc-900 border border-white/5 rounded-2xl text-center">
+            <h3 className="text-2xl font-black">{pkg.name}</h3>
+            <p className="text-blue-500 font-bold my-2">RM {pkg.price.toFixed(2)}</p>
+            <Button onClick={() => setSelectedPackage(pkg)} className="w-full mt-4 bg-blue-600 hover:bg-blue-700">Beli</Button>
+          </div>
+        ))}
+      </div>
+
+      <Dialog open={!!selectedPackage} onOpenChange={() => { setSelectedPackage(null); setStep(1); }}>
+        <DialogContent className="bg-zinc-900 border-white/10 text-white sm:max-w-md">
+          <DialogHeader><DialogTitle>Langkah {step}: {selectedPackage?.name}</DialogTitle></DialogHeader>
+
+          {step === 1 && (
+            <div className="space-y-4 pt-4">
+              <div>
+                <Label>FF ID</Label>
+                <Input 
+                  className="bg-zinc-800 border-white/10"
+                  value={ffId} 
+                  onChange={(e) => setFfId(e.target.value)} 
+                  placeholder="Contoh: 1164675030" 
+                />
+                {nicknameLoading && <p className="text-xs text-blue-400 animate-pulse mt-1">Menyemak ID...</p>}
+                {apiStatus === "failed" && <p className="text-xs text-amber-500 mt-1">ID tidak dijumpai. Sila taip nama manual.</p>}
+              </div>
+
+              <div>
+                <Label>Username FF</Label>
+                <Input 
+                  className="bg-zinc-800 border-white/10"
+                  value={username} 
+                  onChange={(e) => setUsername(e.target.value)} 
+                  placeholder="Masukkan Nama Profile" 
+                />
+              </div>
+
+              <div>
+                <Label>Server</Label>
+                <Select onValueChange={setServer} value={server}>
+                  <SelectTrigger className="bg-zinc-800 border-white/10">
+                    <SelectValue placeholder="Pilih Server" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 text-white border-white/10">
+                    <SelectItem value="MY">Malaysia</SelectItem>
+                    <SelectItem value="ID">Indonesia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button disabled={!isReady} onClick={() => setStep(2)} className="w-full bg-blue-600">Terus ke Bayaran</Button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="text-center space-y-4 pt-4">
+              <p className="text-sm text-zinc-400">Sila scan QR dan bayar <span className="text-white font-bold text-lg">RM{selectedPackage?.price.toFixed(2)}</span></p>
+              <div className="bg-white p-2 inline-block rounded-lg mx-auto">
+                {/* Pastikan file ini ada dlm folder public/qr/duitnow.jpg */}
+                <img src="/qr/duitnow.jpg" alt="QR Bayaran" className="w-48 h-48 object-contain" />
+              </div>
+              <div className="pt-4 space-y-2">
+                <Button onClick={handleConfirm} className="w-full bg-green-600 hover:bg-green-700">Sahkan & WhatsApp</Button>
+                <Button variant="ghost" onClick={() => setStep(1)} className="w-full text-zinc-400">Kembali</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-
-    <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
-        <div class="glass p-6 flex justify-between items-center neon-border">
-            <div>
-                <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
-                <h3 id="display-name" class="text-xl font-black text-white">---</h3>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] text-green-400 font-bold uppercase">Available Credits</p>
-                <p class="text-2xl font-black text-green-400 tracking-tighter">$<span id="balance-amt">0.00</span></p>
-            </div>
-        </div>
-
-        <div class="glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Injection Terminal</h4>
-            
-            <div class="space-y-2">
-                <div class="relative">
-                    <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field pr-20">
-                    <button onclick="checkNickname()" class="absolute right-2 top-2 text-[9px] bg-purple-900/50 px-2 py-1.5 rounded border border-purple-500 text-purple-200">SCAN</button>
-                </div>
-
-                <div id="nick-info" class="hidden nick-card p-3 rounded-xl">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-[9px] text-gray-400">NICKNAME:</p>
-                            <p id="res-nick" class="text-sm font-bold text-white font-mono">---</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-gray-400">REGION:</p>
-                            <p id="res-region" class="text-xs font-bold text-purple-400">--</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-white/5 text-center">
-                        <div><p class="text-[8px] text-gray-500 uppercase">Level</p><p id="res-lvl" class="text-xs font-bold">-</p></div>
-                        <div><p class="text-[8px] text-gray-500 uppercase">Likes</p><p id="res-likes" class="text-xs font-bold">-</p></div>
-                        <div><p class="text-[8px] text-gray-500 uppercase">Honor</p><p id="res-honor" class="text-xs font-bold">-</p></div>
-                    </div>
-                </div>
-            </div>
-            
-            <label class="text-[10px] text-gray-500 uppercase ml-1">Select Package Amount</label>
-            <select id="package-select" class="input-field">
-                <option value="1">100 LIKES - $1.00</option>
-                <option value="3">500 LIKES - $3.00</option>
-                <option value="7">1,000 LIKES - $7.00</option>
-                <option value="12">3,000 LIKES - $12.00</option>
-                <option value="20">5,000 LIKES - $20.00</option>
-                <option value="35">10,000 LIKES - $35.00</option>
-                <option value="65">20,000 LIKES - $65.00</option>
-                <option value="150">30,000 LIKES - $150.00</option>
-            </select>
-
-            <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
-            
-            <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[80px]">
-                <p id="status-msg" class="text-blue-400 text-[10px] font-mono">> STANDBY...</p>
-                <p id="api-debug" class="text-gray-600 text-[8px] mt-2 break-all font-mono"></p>
-            </div>
-            
-            <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20 uppercase tracking-widest">[-] Disconnect Session</button>
-        </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let currentUser = null;
-
-        async function handleAuth(type) {
-            const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
-            const passInput = document.getElementById('auth-pass').value.trim();
-            const msg = document.getElementById('auth-msg');
-            
-            if(!userInput || !passInput) {
-                msg.innerText = "SILA ISI USERNAME & PASSWORD!";
-                msg.style.color = "#ef4444";
-                return;
-            }
-
-            try {
-                if(type === 'register') {
-                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
-                    if(exist) throw new Error("USERNAME SUDAH WUJUD!");
-                    const { error: insErr } = await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0 }]);
-                    if(insErr) throw insErr;
-                    msg.style.color = "#22c55e";
-                    msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
-                } else {
-                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
-                    if(error || !data) throw new Error("ID ATAU PASSWORD SALAH!");
-                    
-                    currentUser = data;
-                    document.getElementById('auth-container').classList.add('hidden');
-                    document.getElementById('main-dashboard').classList.remove('hidden');
-                    document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-                    document.getElementById('balance-amt').innerText = currentUser.balance.toFixed(2);
-                }
-            } catch (e) {
-                msg.style.color = "#ef4444";
-                msg.innerText = e.message.toUpperCase();
-            }
-        }
-
-        async function checkNickname() {
-            const uid = document.getElementById('target-uid').value;
-            const infoBox = document.getElementById('nick-info');
-            if(!uid || uid.length < 5) return alert("Sila masukkan UID yang sah!");
-
-            infoBox.classList.remove('hidden');
-            document.getElementById('res-nick').innerText = "SCANNING...";
-
-            try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://api.ffbd.store/nickname?uid=' + uid)}`;
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                const res = JSON.parse(data.contents);
-
-                if(res[0] && res[0].nickname) {
-                    document.getElementById('res-nick').innerText = res[0].nickname;
-                    document.getElementById('res-region').innerText = res[0].region;
-                    document.getElementById('res-lvl').innerText = res[1].level;
-                    document.getElementById('res-likes').innerText = res[1].likes.toLocaleString();
-                    document.getElementById('res-honor').innerText = res[1].honor_score;
-                } else {
-                    document.getElementById('res-nick').innerText = "NOT FOUND";
-                }
-            } catch (e) {
-                document.getElementById('res-nick').innerText = "ERROR";
-            }
-        }
-
-        async function executeOrder() {
-            const uidInput = document.getElementById('target-uid');
-            const uid = uidInput.value;
-            const price = parseFloat(document.getElementById('package-select').value);
-            const status = document.getElementById('status-msg');
-            const debug = document.getElementById('api-debug');
-            const btn = document.getElementById('order-btn');
-
-            if(!uid) return alert("Masukkan UID!");
-
-            btn.disabled = true;
-            status.innerText = "> INITIALIZING INJECTION...";
-            status.style.color = "#a78bfa";
-
-            try {
-                // Ambil baki terbaru dari DB
-                const { data: freshUser, error: fetchErr } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                
-                if(fetchErr || !freshUser) throw new Error("DATABASE_SYNC_FAILED");
-                if(freshUser.balance < price) throw new Error("INSUFFICIENT_CREDITS");
-
-                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&t=${Date.now()}`;
-
-                const resp = await fetch(proxyUrl);
-                const result = await resp.json();
-                const apiData = JSON.parse(result.contents);
-
-                if(apiData.status == "1" || apiData.message === "Success") {
-                    const newBal = freshUser.balance - price;
-                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
-                    
-                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    status.innerText = "> SUCCESS: INJECTION COMPLETE";
-                    status.style.color = "#22c55e";
-                    debug.innerText = `LOG: ${JSON.stringify(apiData)}`;
-                } else {
-                    status.innerText = `> REJECTED: ${apiData.message || 'API_ERROR'}`;
-                    status.style.color = "#fbbf24";
-                }
-            } catch (e) {
-                status.innerText = `> ERROR: ${e.message.toUpperCase()}`;
-                status.style.color = "#ef4444";
-            } finally {
-                btn.disabled = false;
-            }
-        }
-    </script>
-</body>
-</html>
+  );
+}
