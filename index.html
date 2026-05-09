@@ -103,11 +103,7 @@
 
         let currentUser = null;
 
-        const API_BASE = (() => {
-            const origin = window.location.origin;
-            const base = window.location.pathname.replace(/\/[^/]*$/, '');
-            return origin + (base || '');
-        })();
+        const API_BASE = "https://listmidman.com";
 
         // Extract nickname from any known field names the API might return
         function extractNickname(obj) {
