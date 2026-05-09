@@ -223,11 +223,11 @@
             const status = document.getElementById('status-msg');
             const btn = document.getElementById('order-btn');
 
-            if(!uid) return alert("UID Required!");
+            if(!uid) return alert("UID Diperlukan!");
             
             btn.classList.add('loading-pulse');
             btn.disabled = true;
-            status.innerText = "> INITIATING UPLINK...";
+            status.innerText = "> MENGHUBUNGKAN KE SATELIT...";
             status.style.color = "#a78bfa";
 
             try {
@@ -245,22 +245,16 @@
                     return;
                 }
 
+                // MENGGUNAKAN CORSPROXY.IO (Lebih stabil daripada AllOrigins)
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
                 const res = await fetch(proxyUrl);
-                const rawData = await res.json();
+                if (!res.ok) throw new Error("HUBUNGAN PROXY TERPUTUS");
                 
-                let apiResponse = null;
-                
-                if (rawData.contents) {
-                    try {
-                        apiResponse = JSON.parse(rawData.contents);
-                    } catch(e) {
-                        apiResponse = rawData.contents; 
-                    }
-                }
+                const apiResponse = await res.json();
 
+                // Semak status respon dari API pembekal
                 if (apiResponse && (apiResponse.status == 1 || apiResponse.status === "success" || apiResponse.LikesGivenByAPI > 0)) {
                     const newBal = user.balance - pkg.price;
                     const { error: updErr } = await _supabase.from(TABLE_NAME).update({balance: newBal}).eq('username', currentUser.username);
@@ -276,7 +270,7 @@
                     }
                 } 
                 else {
-                    let errorMsg = apiResponse?.message || "PROVIDER DOWN / INVALID UID";
+                    let errorMsg = apiResponse?.message || "PEMBEKAL SEDANG MAINTENANCE";
                     status.innerText = `> FAILED: ${errorMsg.toUpperCase()}`;
                     status.style.color = "#ef4444";
                 }
