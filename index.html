@@ -10,33 +10,32 @@
         body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Courier New', monospace; overflow-x: hidden; }
         .glass { background: rgba(19, 16, 31, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(167, 139, 250, 0.2); border-radius: 24px; }
         .neon-border { box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
-        .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; transition: 0.3s; }
+        .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; transition: 0.3s; width: 100%; }
         .input-field:focus { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167, 139, 250, 0.2); }
-        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; transition: 0.3s; }
-        .btn-primary:hover { background: #c4b5fd; transform: scale(1.02); }
+        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; transition: 0.3s; cursor: pointer; width: 100%; }
+        .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .hidden { display: none; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
     <div id="auth-container" class="w-full max-w-md glass p-8 neon-border">
-        <h2 id="auth-title" class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
-        
+        <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
         <div class="flex flex-col space-y-4">
             <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
             <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
-            
             <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
-            <button id="register-btn" onclick="handleAuth('register')" class="text-xs text-gray-500 hover:text-purple-400">NO ACCOUNT? REGISTER HERE</button>
+            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest">Register New Uplink</button>
         </div>
-        <p id="auth-msg" class="text-[10px] mt-4 text-center text-red-500"></p>
+        <p id="auth-msg" class="text-[10px] mt-4 text-center"></p>
     </div>
 
     <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
         <div class="glass p-6 flex justify-between items-center neon-border">
             <div>
                 <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
-                <h3 id="display-name" class="text-xl font-black">---</h3>
+                <h3 id="display-name" class="text-xl font-black text-white">---</h3>
             </div>
             <div class="text-right">
                 <p class="text-[10px] text-green-400 font-bold uppercase">Available Credits</p>
@@ -46,78 +45,65 @@
 
         <div class="glass p-6 space-y-4">
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Injection Terminal</h4>
-            
-            <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field w-full">
-            
-            <select id="package-select" class="input-field w-full">
+            <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
+            <select id="package-select" class="input-field">
                 <option value="7">1,000 LIKES - $7.00</option>
                 <option value="12">3,000 LIKES - $12.00</option>
                 <option value="27">5,000 LIKES - $27.00</option>
             </select>
-
-            <button id="order-btn" onclick="executeOrder()" class="btn-primary w-full">EXECUTE ORDER</button>
-            
+            <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
             <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[60px]">
                 <p id="status-msg" class="text-blue-400 text-[10px] font-mono">> STANDBY...</p>
                 <p id="api-debug" class="text-gray-600 text-[8px] mt-1 break-all"></p>
             </div>
-
-            <button onclick="logout()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20">[-] DISCONNECT SESSION</button>
+            <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20">[-] DISCONNECT SESSION</button>
         </div>
     </div>
 
     <script>
-        // Konfigurasi Supabase
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
 
-        // --- SISTEM AUTH (LOGIN/REGISTER) ---
         async function handleAuth(type) {
-            const user = document.getElementById('auth-user').value.trim();
+            const user = document.getElementById('auth-user').value.trim().toLowerCase();
             const pass = document.getElementById('auth-pass').value.trim();
             const msg = document.getElementById('auth-msg');
-
-            if(!user || !pass) return msg.innerText = "SILA ISI SEMUA RUANGAN!";
+            
+            if(!user || !pass) {
+                msg.innerText = "SILA ISI SEMUA RUANGAN!";
+                msg.style.color = "#ef4444";
+                return;
+            }
 
             try {
                 if(type === 'register') {
-                    // Semak jika user wujud
-                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', user).single();
-                    if(exist) return msg.innerText = "USERNAME SUDAH WUJUD!";
+                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
+                    if(exist) throw new Error("USERNAME SUDAH WUJUD!");
 
-                    // Daftar User Baru (Baki permulaan $1000 contohnya)
-                    await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 1000 }]);
+                    const { error: insErr } = await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 1000 }]);
+                    if(insErr) throw insErr;
+                    
                     msg.style.color = "#22c55e";
-                    msg.innerText = "PENDAFTARAN BERJAYA! SILA LOGIN.";
+                    msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
                 } else {
-                    // Login
-                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).single();
-                    if(error || !data) throw new Error("USERNAME/PASSWORD SALAH!");
+                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
+                    if(error || !data) throw new Error("ID/PASSWORD SALAH!");
 
                     currentUser = data;
-                    loadDashboard();
+                    document.getElementById('auth-container').classList.add('hidden');
+                    document.getElementById('main-dashboard').classList.remove('hidden');
+                    document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
+                    document.getElementById('balance-amt').innerText = currentUser.balance.toFixed(2);
                 }
             } catch (e) {
                 msg.style.color = "#ef4444";
-                msg.innerText = e.message;
+                msg.innerText = e.message.toUpperCase();
             }
         }
 
-        function loadDashboard() {
-            document.getElementById('auth-container').classList.add('hidden');
-            document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-            document.getElementById('balance-amt').innerText = currentUser.balance.toFixed(2);
-        }
-
-        function logout() {
-            location.reload();
-        }
-
-        // --- SISTEM TERMINAL (DARI KOD ASAL ANDA) ---
         async function executeOrder() {
             const uid = document.getElementById('target-uid').value;
             const price = parseFloat(document.getElementById('package-select').value);
@@ -129,14 +115,14 @@
 
             btn.disabled = true;
             status.innerText = "> INJECTING PAYLOAD...";
-            
-            try {
-                // 1. Ambil baki terbaru dari Supabase
-                const { data: userData } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                
-                if(userData.balance < price) throw new Error("INSUFFICIENT_CREDITS");
+            status.style.color = "#a78bfa";
 
-                // 2. API Call (Gunakan Proxy untuk elak 'Load Failed')
+            try {
+                // Refresh baki terbaru dari server
+                const { data: freshUser } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
+                
+                if(freshUser.balance < price) throw new Error("INSUFFICIENT_CREDITS");
+
                 const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
                 const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
@@ -147,7 +133,7 @@
                 let apiData = JSON.parse(rawData);
 
                 if(apiData.status == "1" || apiData.LikesGivenByAPI > 0) {
-                    const newBal = userData.balance - price;
+                    const newBal = freshUser.balance - price;
                     await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
                     
                     document.getElementById('balance-amt').innerText = newBal.toFixed(2);
@@ -158,7 +144,7 @@
                     status.style.color = "#fbbf24";
                 }
             } catch (e) {
-                status.innerText = `> ERROR: ${e.message}`;
+                status.innerText = `> ERROR: ${e.message.toUpperCase()}`;
                 status.style.color = "#ef4444";
             } finally {
                 btn.disabled = false;
