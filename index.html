@@ -3,40 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeastPanel - Debug Edition</title>
+    <title>BeastPanel - V3.5 Stable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: monospace; }
-        .terminal-box { background: rgba(0,0,0,0.8); border: 1px solid #444; padding: 15px; border-radius: 10px; }
-        .log-area { background: #000; color: #00ff00; font-size: 10px; padding: 10px; border: 1px solid #222; margin-top: 10px; height: 100px; overflow-y: auto; }
+        body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Courier New', monospace; }
+        .glass-card { background: rgba(19, 16, 31, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(167, 139, 250, 0.2); }
+        .neon-text { text-shadow: 0 0 10px #a78bfa; }
+        .btn-execute { border: 2px solid #a78bfa; color: #a78bfa; transition: 0.3s; cursor: pointer; }
+        .btn-execute:hover:not(:disabled) { background: #a78bfa; color: white; box-shadow: 0 0 20px #a78bfa; }
+        .btn-execute:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status-log { background: #000; border: 1px solid #333; padding: 10px; font-size: 10px; border-radius: 8px; min-height: 50px; overflow-wrap: break-word; }
     </style>
 </head>
-<body class="p-5 flex flex-col items-center">
+<body class="p-4 flex flex-col items-center">
 
-    <div class="w-full max-w-md space-y-4">
-        <div class="terminal-box">
-            <h2 class="text-center text-purple-400 font-bold mb-4">INJECTION TERMINAL</h2>
-            <input id="target-uid" type="text" placeholder="TARGET UID" class="w-full p-3 bg-gray-900 border border-gray-700 mb-3 rounded">
+    <div id="main-dashboard" class="w-full max-w-md space-y-4 mt-6">
+        <div class="glass-card p-6 rounded-3xl flex justify-between items-center">
+            <div>
+                <p class="text-[10px] text-purple-400 font-bold uppercase">Subject</p>
+                <h3 id="display-name" class="text-xl font-black">IPANZZ</h3>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] text-green-400 font-bold uppercase">Balance</p>
+                <p class="text-2xl font-black text-green-400 neon-text">$<span id="balance-amt">14467.00</span></p>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-3xl space-y-4">
+            <h4 class="text-center text-xs tracking-widest text-purple-300">INJECTION TERMINAL</h4>
             
-            <select id="pkg" class="w-full p-3 bg-gray-900 border border-gray-700 mb-4 rounded text-sm">
+            <input id="target-uid" type="number" placeholder="TARGET UID" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white outline-none focus:border-purple-500">
+            
+            <select id="package-select" class="w-full p-4 bg-black border border-gray-800 rounded-xl text-white outline-none">
                 <option value="7">1,000 LIKES - $7.00</option>
                 <option value="12">3,000 LIKES - $12.00</option>
                 <option value="27">5,000 LIKES - $27.00</option>
             </select>
 
-            <button onclick="runInjection()" id="btn" class="w-full bg-purple-600 p-3 rounded font-bold hover:bg-purple-500 transition">EXECUTE ORDER</button>
+            <button id="order-btn" onclick="executeOrder()" class="w-full p-4 rounded-xl font-black tracking-widest btn-execute">EXECUTE ORDER</button>
             
-            <div class="mt-4">
-                <p class="text-[10px] text-gray-400 uppercase">System Logs:</p>
-                <div id="logs" class="log-area">
-                    > Terminal Initialized...<br>
-                    > Waiting for Command...
-                </div>
+            <div class="status-log">
+                <p id="status-msg" class="text-blue-400">> STANDBY...</p>
+                <p id="api-debug" class="text-gray-500 mt-2 font-mono" style="font-size: 9px;"></p>
             </div>
         </div>
-        
-        <p class="text-center text-[9px] text-gray-500">Current Balance: $<span id="bal-disp">14467.00</span></p>
     </div>
 
     <script>
@@ -44,56 +55,66 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function addLog(msg, color = "#00ff00") {
-            const l = document.getElementById('logs');
-            l.innerHTML += `<br><span style="color:${color}">> ${msg}</span>`;
-            l.scrollTop = l.scrollHeight;
-        }
-
-        async function runInjection() {
+        async function executeOrder() {
             const uid = document.getElementById('target-uid').value;
-            const price = parseFloat(document.getElementById('pkg').value);
-            const btn = document.getElementById('btn');
-            
-            if(!uid) return alert("UID Diperlukan!");
+            const price = parseFloat(document.getElementById('package-select').value);
+            const status = document.getElementById('status-msg');
+            const debug = document.getElementById('api-debug');
+            const btn = document.getElementById('order-btn');
+
+            if(!uid) return alert("Sila masukkan UID!");
 
             btn.disabled = true;
-            addLog("Checking Secure Uplink...", "#a78bfa");
+            status.innerText = "> INJECTING PAYLOAD...";
+            status.style.color = "#a78bfa";
+            debug.innerText = "";
 
             try {
-                // 1. Semak Database
-                const { data: user } = await _supabase.from('database panel').select('balance').eq('username', 'ipanzz').single();
+                // 1. Semak Baki di Database
+                const { data: user, error: dbError } = await _supabase.from('database panel').select('balance').eq('username', 'ipanzz').single();
                 
-                if(user.balance < price) {
-                    addLog("CRITICAL ERROR: INSUFFICIENT BALANCE", "#ff4444");
-                    return;
+                if(dbError || !user) throw new Error("DATABASE_CONNECTION_ERROR");
+                if(user.balance < price) throw new Error("INSUFFICIENT_CREDITS");
+
+                // 2. Request ke API Samiul menggunakan Proxy lain (Corsproxy.io) untuk elak 'Load Failed'
+                const targetUrl = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) throw new Error(`SERVER_REJECTED (${response.status})`);
+
+                const rawData = await response.text();
+                debug.innerText = `RAW_LOG: ${rawData}`; // Tunjukkan pada Samiul jika error
+
+                let apiData;
+                try {
+                    apiData = JSON.parse(rawData);
+                } catch (e) {
+                    throw new Error("INVALID_API_RESPONSE_FORMAT");
                 }
 
-                // 2. Kirim ke API Samiul
-                addLog(`Injecting UID: ${uid}...`);
-                const target = `https://api.ffbd.store/xM/L?key=T526C4&uid=${uid}`;
-                const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}&timestamp=${Date.now()}`;
-
-                const res = await fetch(proxy);
-                const data = await res.json();
-                
-                // 3. Tunjuk "Response API" (Ini yang Samiul nak tengok)
-                addLog(`API RESPONSE: ${data.contents}`, "#3b82f6");
-
-                const apiJson = JSON.parse(data.contents);
-
-                if(apiJson.status == 1 || apiJson.LikesGivenByAPI > 0) {
-                    // Berjaya Update
+                // 3. Logik Kejayaan API
+                if(apiData.status == "1" || apiData.LikesGivenByAPI > 0 || apiData.message === "Success") {
+                    // Tolak baki dalam database
                     const newBal = user.balance - price;
-                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', 'ipanzz');
-                    document.getElementById('bal-disp').innerText = newBal.toFixed(2);
-                    addLog("SUCCESS: DATA INJECTED", "#22c55e");
+                    const { error: upError } = await _supabase.from('database panel').update({ balance: newBal }).eq('username', 'ipanzz');
+                    
+                    if (upError) throw new Error("SYNC_ERROR");
+
+                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
+                    status.innerText = "> SUCCESS: DATA_ACCEPTED";
+                    status.style.color = "#22c55e";
                 } else {
-                    addLog(`REJECTED: ${apiJson.message || 'Unknown Error'}`, "#fbbf24");
+                    // API Reject (Maintenance / Invalid UID)
+                    status.innerText = `> REJECTED: ${apiData.message || 'API_OFFLINE'}`;
+                    status.style.color = "#fbbf24";
                 }
 
             } catch (e) {
-                addLog(`CONNECTION FAILED: ${e.message}`, "#ff4444");
+                console.error(e);
+                status.innerText = `> ERROR: ${e.message}`;
+                status.style.color = "#ef4444";
             } finally {
                 btn.disabled = false;
             }
