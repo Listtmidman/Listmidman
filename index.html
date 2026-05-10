@@ -20,6 +20,9 @@
         .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
         .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
         
+        .notif-box { background: rgba(167, 139, 250, 0.1); border-left: 4px solid #a78bfa; padding: 12px; border-radius: 8px; margin-bottom: 15px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } 50% { box-shadow: 0 0 10px rgba(167, 139, 250, 0.4); } 100% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } }
+
         .modal-topup { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
         .qr-container { background: #1a1a1a; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #a78bfa; max-width: 320px; width: 100%; }
         .qr-image { width: 100%; border-radius: 10px; margin: 15px 0; border: 4px solid white; }
@@ -41,6 +44,15 @@
     </div>
 
     <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
+        
+        <div class="notif-box">
+            <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
+            <p class="text-[11px] text-white leading-relaxed mt-1">
+                🚀 <span class="text-purple-400">Upgrade:</span> Hubungi Admin untuk upgrade ke Reseller/Owner.<br>
+                💳 <span class="text-green-400">Topup:</span> Member boleh topup melalui Reseller sah.
+            </p>
+        </div>
+
         <div class="glass p-6 flex justify-between items-center neon-border">
             <div>
                 <span id="user-rank" class="rank-badge">MEMBER</span>
@@ -55,7 +67,8 @@
 
         <div class="flex border-b border-gray-800">
             <div id="tab-terminal" class="tab-btn active" onclick="switchTab('terminal')">TERMINAL</div>
-            <div id="tab-topup" class="tab-btn" onclick="switchTab('topup')">TOPUP CREDIT</div>
+            <div id="tab-topup" class="tab-btn" onclick="switchTab('topup')">TOPUP</div>
+            <div id="tab-transfer" class="tab-btn hidden" onclick="switchTab('transfer')">TRANSFER</div>
         </div>
 
         <div id="page-terminal" class="glass p-6 space-y-4">
@@ -70,19 +83,25 @@
                         <span id="res-nick" class="font-bold text-white">---</span>
                         <span id="res-region" class="text-purple-400">--</span>
                     </div>
-                    <div class="grid grid-cols-3 gap-1 mt-2 text-center text-[10px]">
-                        <div>Lv: <span id="res-lvl">-</span></div>
-                        <div>Likes: <span id="res-likes">-</span></div>
-                        <div>Honor: <span id="res-honor">-</span></div>
-                    </div>
                 </div>
             </div>
             <label class="text-[10px] text-gray-500 uppercase ml-1">Select Package Amount</label>
             <select id="package-select" class="input-field"></select>
             <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
-            <div class="bg-black border border-gray-800 p-3 rounded-lg min-h-[60px]">
+            <div class="bg-black border border-gray-800 p-3 rounded-lg">
                 <p id="status-msg" class="text-blue-400 text-[10px] font-mono">&gt; STANDBY...</p>
             </div>
+        </div>
+
+        <div id="page-transfer" class="hidden glass p-6 space-y-4">
+            <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Reseller Control: Transfer Credit</h4>
+            <p class="text-[9px] text-gray-400 text-center">Pindahkan baki kredit anda terus ke akaun Member.</p>
+            <div class="space-y-3">
+                <input id="tf-username" type="text" placeholder="MEMBER USERNAME" class="input-field uppercase">
+                <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
+                <button id="tf-btn" onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">SEND CREDIT</button>
+            </div>
+            <p id="tf-status" class="text-[10px] text-center font-mono uppercase"></p>
         </div>
 
         <div id="page-topup" class="hidden glass p-6 space-y-4">
@@ -91,14 +110,10 @@
                 <option value="1">RM 1.00</option>
                 <option value="5">RM 5.00</option>
                 <option value="10">RM 10.00</option>
-                <option value="20">RM 20.00</option>
                 <option value="50">RM 50.00</option>
                 <option value="100">RM 100.00</option>
-                <option value="150">RM 150.00</option>
-                <option value="200">RM 200.00</option>
             </select>
             <button onclick="showQR()" class="btn-primary bg-green-500 hover:bg-green-400">CONFIRM TOPUP</button>
-            <p class="text-[9px] text-gray-500 text-center italic">Sila lampirkan resit di WhatsApp selepas bayaran dibuat.</p>
         </div>
 
         <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20 uppercase tracking-widest">[-] Disconnect Session</button>
@@ -117,159 +132,4 @@
     <script>
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const API_BASE = "https://likeff-beast--listpagemrbeast.replit.app";
-        const WA_NUMBER = "601165406482";
-
-        let currentUser = null;
-
-        // HARGA IKUT PANGKAT (100 - 30k Likes)
-        const PRICING_PLANS = {
-            OWNER: [
-                { val: 0.10, label: "100 LIKES - $0.10" },
-                { val: 0.40, label: "500 LIKES - $0.40" },
-                { val: 0.80, label: "1,000 LIKES - $0.80" },
-                { val: 2.00, label: "3,000 LIKES - $2.00" },
-                { val: 3.50, label: "5,000 LIKES - $3.50" },
-                { val: 6.00, label: "10,000 LIKES - $6.00" },
-                { val: 11.00, label: "20,000 LIKES - $11.00" },
-                { val: 15.00, label: "30,000 LIKES - $15.00" }
-            ],
-            RESELLER: [
-                { val: 0.50, label: "100 LIKES - $0.50" },
-                { val: 2.00, label: "500 LIKES - $2.00" },
-                { val: 4.00, label: "1,000 LIKES - $4.00" },
-                { val: 10.00, label: "3,000 LIKES - $10.00" },
-                { val: 16.00, label: "5,000 LIKES - $16.00" },
-                { val: 30.00, label: "10,000 LIKES - $30.00" },
-                { val: 55.00, label: "20,000 LIKES - $55.00" },
-                { val: 80.00, label: "30,000 LIKES - $80.00" }
-            ],
-            MEMBER: [
-                { val: 1.00, label: "100 LIKES - $1.00" },
-                { val: 3.50, label: "500 LIKES - $3.50" },
-                { val: 7.00, label: "1,000 LIKES - $7.00" },
-                { val: 18.00, label: "3,000 LIKES - $18.00" },
-                { val: 25.00, label: "5,000 LIKES - $25.00" },
-                { val: 45.00, label: "10,000 LIKES - $45.00" },
-                { val: 85.00, label: "20,000 LIKES - $85.00" },
-                { val: 120.00, label: "30,000 LIKES - $120.00" }
-            ]
-        };
-
-        const STATUS_MSG = { '0': 'UID SALAH', '2': 'LIMIT HARIAN PENUH', '3': 'API LIMIT', '4': 'PENDING' };
-
-        function switchTab(tab) {
-            document.getElementById('page-terminal').classList.toggle('hidden', tab !== 'terminal');
-            document.getElementById('page-topup').classList.toggle('hidden', tab !== 'topup');
-            document.getElementById('tab-terminal').className = tab === 'terminal' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('tab-topup').className = tab === 'topup' ? 'tab-btn active' : 'tab-btn';
-        }
-
-        function showQR() {
-            const amt = document.getElementById('topup-select').value;
-            document.getElementById('qr-amount-txt').innerText = `RM ${parseFloat(amt).toFixed(2)}`;
-            document.getElementById('qr-modal').classList.remove('hidden');
-        }
-
-        function closeQR() { document.getElementById('qr-modal').classList.add('hidden'); }
-
-        function sendWA() {
-            const amt = document.getElementById('topup-select').value;
-            const user = currentUser ? currentUser.username.toUpperCase() : "USER";
-            const text = encodeURIComponent(`Halo Admin,\n\nSaya sudah buat bayaran Topup.\n\nUsername: ${user}\nJumlah: RM ${amt}\n\nSila sahkan baki saya.`);
-            window.open(`https://wa.me/${WA_NUMBER}?text=${text}`, '_blank');
-            closeQR();
-        }
-
-        async function handleAuth(type) {
-            const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
-            const passInput = document.getElementById('auth-pass').value.trim();
-            const msg = document.getElementById('auth-msg');
-            if (!userInput || !passInput) return;
-            msg.innerText = "CONNECTING...";
-            try {
-                if (type === 'register') {
-                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
-                    if (exist) throw new Error("USERNAME SUDAH WUJUD!");
-                    await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0, rank: 'MEMBER' }]);
-                    msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
-                } else {
-                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
-                    if (error || !data) throw new Error("ID/PASSWORD SALAH!");
-                    currentUser = data;
-                    document.getElementById('auth-container').classList.add('hidden');
-                    document.getElementById('main-dashboard').classList.remove('hidden');
-                    document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-                    document.getElementById('balance-amt').innerText = parseFloat(currentUser.balance).toFixed(2);
-                    
-                    const rank = (data.rank || 'MEMBER').toUpperCase();
-                    const badge = document.getElementById('user-rank');
-                    badge.innerText = rank;
-                    
-                    // Warna ikut pangkat
-                    if(rank==='OWNER') badge.style.color='#ff4d4d';
-                    else if(rank==='RESELLER') badge.style.color='#22c55e';
-                    else badge.style.color='#a78bfa';
-
-                    const plans = PRICING_PLANS[rank] || PRICING_PLANS.MEMBER;
-                    document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
-                }
-            } catch (e) { msg.innerText = String(e.message).toUpperCase(); }
-        }
-
-        async function safeFetch(url) {
-            const res = await fetch(url);
-            return await res.json();
-        }
-
-        async function checkNickname() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const infoBox = document.getElementById('nick-info');
-            const nickEl = document.getElementById('res-nick');
-            if (uid.length < 5) return;
-            infoBox.classList.remove('hidden');
-            nickEl.innerText = "SCANNING...";
-            try {
-                const res = await safeFetch(`${API_BASE}/api/ff/nickname?uid=${uid}`);
-                const info = Array.isArray(res) ? res[0] : res;
-                const stats = Array.isArray(res) ? res[1] : null;
-                const nick = info?.nickname || info?.PlayerNickname || stats?.nickname || "NOT FOUND";
-                nickEl.innerText = nick;
-                document.getElementById('res-region').innerText = info?.region || stats?.PlayerRegion || "--";
-                document.getElementById('res-lvl').innerText = stats?.level || info?.level || "-";
-                document.getElementById('res-likes').innerText = stats?.likes || info?.likes || "-";
-                document.getElementById('res-honor').innerText = stats?.honor_score || "-";
-            } catch (e) { nickEl.innerText = "ERROR SCAN"; }
-        }
-
-        async function executeOrder() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const price = parseFloat(document.getElementById('package-select').value);
-            const statusEl = document.getElementById('status-msg');
-            const btn = document.getElementById('order-btn');
-            if (!uid) return alert("Masukkan UID!");
-            btn.disabled = true;
-            statusEl.innerText = "> PROSESS SEBENTAR...";
-            try {
-                const { data: freshUser } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                if (parseFloat(freshUser.balance) < price) throw new Error("KREDIT TIDAK MENCUKUPI");
-                const apiData = await safeFetch(`${API_BASE}/api/ff/likes?uid=${uid}`);
-                if (String(apiData.status) === "1" || apiData.message === "Success") {
-                    const newBal = parseFloat(freshUser.balance) - price;
-                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
-                    document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                    statusEl.innerText = "> SUCCESS: INJECTION COMPLETE";
-                    statusEl.style.color = "#22c55e";
-                } else {
-                    statusEl.innerText = `> REJECTED: ${STATUS_MSG[apiData.status] || 'SERVER BUSY'}`;
-                    statusEl.style.color = "#fbbf24";
-                }
-            } catch (e) {
-                statusEl.innerText = `> ERROR: ${e.message.toUpperCase()}`;
-                statusEl.style.color = "#ef4444";
-            } finally { btn.disabled = false; }
-        }
-    </script>
-</body>
-</html>
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY
