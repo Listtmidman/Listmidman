@@ -17,15 +17,12 @@
         .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
         .hidden { display: none !important; }
-        .nick-card { background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(0,0,0,0.5)); border: 1px dashed rgba(167, 139, 250, 0.4); }
         .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
         
         .notif-box { background: rgba(167, 139, 250, 0.1); border-left: 4px solid #a78bfa; padding: 12px; border-radius: 8px; margin-bottom: 15px; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } 50% { box-shadow: 0 0 10px rgba(167, 139, 250, 0.4); } 100% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } }
 
-        .modal-topup { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-        .qr-container { background: #1a1a1a; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #a78bfa; max-width: 320px; width: 100%; }
-        .qr-image { width: 100%; border-radius: 10px; margin: 15px 0; border: 4px solid white; }
+        .modal-custom { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
         .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 10px; font-weight: bold; color: #666; border-bottom: 2px solid transparent; cursor: pointer; }
         .tab-btn.active { color: #a78bfa; border-bottom: 2px solid #a78bfa; }
     </style>
@@ -35,8 +32,8 @@
     <div id="auth-container" class="w-full max-w-md glass p-8 neon-border">
         <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
         <div class="flex flex-col space-y-4">
-            <input id="auth-user" type="text" placeholder="USERNAME" class="input-field" autocomplete="username">
-            <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field" autocomplete="current-password">
+            <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
+            <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
             <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
             <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
         </div>
@@ -47,15 +44,14 @@
         
         <div class="notif-box">
             <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
-            <p class="text-[11px] text-white leading-relaxed mt-1">
-                🚀 <span class="text-purple-400">Upgrade:</span> Hubungi Admin untuk upgrade ke Reseller/Owner.<br>
-                💳 <span class="text-green-400">Topup:</span> Member boleh topup melalui Reseller sah.
+            <p class="text-[11px] text-white mt-1">
+                🚀 <span class="text-purple-400">PENTING:</span> Jika Owner busy, sila hubungi senarai Reseller di tab TOPUP untuk kreditkan akaun anda.
             </p>
         </div>
 
         <div class="glass p-6 flex justify-between items-center neon-border">
             <div>
-                <span id="user-rank" class="rank-badge">MEMBER</span>
+                <span id="user-rank" class="rank-badge bg-purple-900/50 text-purple-300">MEMBER</span>
                 <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
                 <h3 id="display-name" class="text-xl font-black text-white">---</h3>
             </div>
@@ -72,60 +68,53 @@
         </div>
 
         <div id="page-terminal" class="glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Injection Terminal</h4>
-            <div class="space-y-2">
-                <div class="relative">
-                    <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field pr-20" inputmode="numeric">
-                    <button onclick="checkNickname()" class="absolute right-2 top-2 text-[9px] bg-purple-900/50 px-2 py-1.5 rounded border border-purple-500 text-purple-200">SCAN</button>
-                </div>
-                <div id="nick-info" class="hidden nick-card p-3 rounded-xl text-xs">
-                    <div class="flex justify-between">
-                        <span id="res-nick" class="font-bold text-white">---</span>
-                        <span id="res-region" class="text-purple-400">--</span>
-                    </div>
-                </div>
-            </div>
-            <label class="text-[10px] text-gray-500 uppercase ml-1">Select Package Amount</label>
+            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase italic">Injection Terminal</h4>
+            <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
             <select id="package-select" class="input-field"></select>
             <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
-            <div class="bg-black border border-gray-800 p-3 rounded-lg">
-                <p id="status-msg" class="text-blue-400 text-[10px] font-mono">&gt; STANDBY...</p>
-            </div>
-        </div>
-
-        <div id="page-transfer" class="hidden glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Credit Management</h4>
-            <p class="text-[9px] text-gray-400 text-center uppercase tracking-tighter">Tambah baki terus ke akaun pengguna.</p>
-            <div class="space-y-3">
-                <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
-                <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
-                <button id="tf-btn" onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">SEND CREDIT</button>
-            </div>
-            <p id="tf-status" class="text-[10px] text-center font-mono uppercase"></p>
+            <p id="status-msg" class="text-center text-[10px] font-mono">&gt; STANDBY...</p>
         </div>
 
         <div id="page-topup" class="hidden glass p-6 space-y-4">
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
+            
+            <div class="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl">
+                <p class="text-[9px] text-purple-300 mb-2 font-bold uppercase">Manual Topup (Fast Response):</p>
+                <div id="reseller-list" class="space-y-2">
+                    <p class="text-[10px] text-gray-500 italic">Memuatkan senarai reseller...</p>
+                </div>
+            </div>
+
+            <hr class="border-gray-800">
+            <p class="text-[10px] text-center text-gray-500">ATAU TOPUP VIA OWNER (QR):</p>
             <select id="topup-select" class="input-field">
                 <option value="1">RM 1.00</option>
                 <option value="5">RM 5.00</option>
                 <option value="10">RM 10.00</option>
-                <option value="50">RM 50.00</option>
-                <option value="100">RM 100.00</option>
             </select>
             <button onclick="showQR()" class="btn-primary bg-green-500 hover:bg-green-400">CONFIRM TOPUP</button>
         </div>
 
-        <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 border border-gray-800 p-2 rounded-lg hover:bg-red-900/20 uppercase tracking-widest">[-] Disconnect Session</button>
+        <div id="page-transfer" class="hidden glass p-6 space-y-4">
+            <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Admin/Reseller Transfer</h4>
+            <div class="space-y-3">
+                <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
+                <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
+                <button id="tf-btn" onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">KREDITKAN MEMBER</button>
+            </div>
+            <p id="tf-status" class="text-[10px] text-center font-mono uppercase mt-2"></p>
+        </div>
+
+        <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 p-2 uppercase tracking-widest">[-] Logout Session</button>
     </div>
 
-    <div id="qr-modal" class="modal-topup hidden">
-        <div class="qr-container">
-            <h2 class="text-white font-bold text-sm">TOUCH 'N GO eWALLET</h2>
-            <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" alt="TNG QR" class="qr-image">
+    <div id="qr-modal" class="modal-custom hidden">
+        <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
+            <h2 class="text-white font-bold text-sm">OWNER QR PAYMENT</h2>
+            <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl my-4 border-2 border-white">
             <p id="qr-amount-txt" class="text-2xl font-black text-green-400 mb-4">RM 0.00</p>
-            <button onclick="sendWA()" class="btn-primary mb-2 bg-purple-600">HANTAR RESIT (WHATSAPP)</button>
-            <button onclick="closeQR()" class="text-xs text-gray-500 uppercase tracking-tighter">Batal</button>
+            <button onclick="sendWA()" class="btn-primary bg-purple-600">HANTAR RESIT KE OWNER</button>
+            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="text-xs text-gray-500 mt-4 block mx-auto">TUTUP</button>
         </div>
     </div>
 
@@ -134,55 +123,41 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const API_BASE = "https://likeff-beast--listpagemrbeast.replit.app";
-        const WA_NUMBER = "601165406482";
 
         let currentUser = null;
 
-        const PRICING_PLANS = {
-            OWNER: [
-                { val: 0.10, label: "100 LIKES - $0.10" },
-                { val: 0.80, label: "1,000 LIKES - $0.80" },
-                { val: 3.50, label: "5,000 LIKES - $3.50" },
-                { val: 15.00, label: "30,000 LIKES - $15.00" }
-            ],
-            RESELLER: [
-                { val: 0.50, label: "100 LIKES - $0.50" },
-                { val: 4.00, label: "1,000 LIKES - $4.00" },
-                { val: 16.00, label: "5,000 LIKES - $16.00" },
-                { val: 80.00, label: "30,000 LIKES - $80.00" }
-            ],
-            MEMBER: [
-                { val: 1.00, label: "100 LIKES - $1.00" },
-                { val: 7.00, label: "1,000 LIKES - $7.00" },
-                { val: 25.00, label: "5,000 LIKES - $25.00" },
-                { val: 120.00, label: "30,000 LIKES - $120.00" }
-            ]
+        // SENARAI RESELLER (Sila tukar Nama & No WhatsApp di sini)
+        const RESELLER_CONTACTS = [
+            { name: "RESELLER ADAM", phone: "60123456789" },
+            { name: "RESELLER JEP", phone: "60111223344" }
+        ];
+
+        const PRICING = {
+            OWNER: [{ val: 0.10, label: "100 LIKES - $0.10" }, { val: 0.80, label: "1,000 LIKES - $0.80" }],
+            RESELLER: [{ val: 0.50, label: "100 LIKES - $0.50" }, { val: 4.00, label: "1,000 LIKES - $4.00" }],
+            MEMBER: [{ val: 1.00, label: "100 LIKES - $1.00" }, { val: 7.00, label: "1,000 LIKES - $7.00" }]
         };
 
         function switchTab(tab) {
-            document.getElementById('page-terminal').classList.toggle('hidden', tab !== 'terminal');
-            document.getElementById('page-topup').classList.toggle('hidden', tab !== 'topup');
-            document.getElementById('page-transfer').classList.toggle('hidden', tab !== 'transfer');
-            document.getElementById('tab-terminal').className = tab === 'terminal' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('tab-topup').className = tab === 'topup' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('tab-transfer').className = tab === 'transfer' ? 'tab-btn active' : 'tab-btn';
+            ['page-terminal', 'page-topup', 'page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            document.getElementById('page-' + tab).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
         }
 
         async function handleAuth(type) {
-            const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
-            const passInput = document.getElementById('auth-pass').value.trim();
-            const msg = document.getElementById('auth-msg');
-            if (!userInput || !passInput) return;
-            msg.innerText = "CONNECTING...";
+            const user = document.getElementById('auth-user').value.trim().toLowerCase();
+            const pass = document.getElementById('auth-pass').value.trim();
+            if (!user || !pass) return;
+
             try {
                 if (type === 'register') {
-                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
-                    if (exist) throw new Error("USERNAME SUDAH WUJUD!");
-                    await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0, rank: 'MEMBER' }]);
-                    msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
+                    await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
+                    alert("Berjaya daftar!");
                 } else {
-                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
-                    if (error || !data) throw new Error("ID/PASSWORD SALAH!");
+                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
+                    if (error || !data) throw new Error("Salah login!");
+                    
                     currentUser = data;
                     document.getElementById('auth-container').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
@@ -191,103 +166,89 @@
                     
                     const rank = (data.rank || 'MEMBER').toUpperCase();
                     document.getElementById('user-rank').innerText = rank;
-                    if(rank === 'RESELLER' || rank === 'OWNER') document.getElementById('tab-transfer').classList.remove('hidden');
 
-                    const plans = PRICING_PLANS[rank] || PRICING_PLANS.MEMBER;
+                    // Sekatan: Hanya Owner/Reseller nampak tab Transfer
+                    if (rank === 'OWNER' || rank === 'RESELLER') {
+                        document.getElementById('tab-transfer').classList.remove('hidden');
+                    }
+
+                    const plans = PRICING[rank] || PRICING.MEMBER;
                     document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
+                    loadResellers();
                 }
-            } catch (e) { msg.innerText = String(e.message).toUpperCase(); }
+            } catch (e) { alert(e.message); }
         }
 
-        function updateBalanceUI(amt) {
-            document.getElementById('balance-amt').innerText = parseFloat(amt).toFixed(2);
+        function loadResellers() {
+            const container = document.getElementById('reseller-list');
+            container.innerHTML = RESELLER_CONTACTS.map(res => `
+                <div class="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-purple-500/20">
+                    <span class="text-[10px] font-bold text-white">${res.name}</span>
+                    <a href="https://wa.me/${res.phone}?text=Bos%20nak%20isi%20kredit%20panel" target="_blank" class="text-[9px] bg-green-600 text-white px-2 py-1 rounded">WHATSAPP</a>
+                </div>
+            `).join('');
         }
 
         async function executeTransfer() {
             const target = document.getElementById('tf-username').value.trim().toLowerCase();
             const amount = parseFloat(document.getElementById('tf-amount').value);
             const status = document.getElementById('tf-status');
-            const btn = document.getElementById('tf-btn');
 
-            if (!target || !amount || amount <= 0) return alert("Details tidak lengkap!");
-            if (target === currentUser.username) return alert("Tidak boleh transfer ke diri sendiri!");
+            if (!target || isNaN(amount)) return alert("Isi semua info!");
 
-            btn.disabled = true;
-            status.innerText = "> PROCESSING...";
             try {
-                const { data: receiver } = await _supabase.from('database panel').select('balance').eq('username', target).maybeSingle();
-                if (!receiver) throw new Error("TARGET USER TIDAK WUJUD!");
+                const { data: receiver } = await _supabase.from('database panel').select('balance, rank').eq('username', target).maybeSingle();
+                if (!receiver) throw new Error("User tidak wujud!");
 
-                const rank = (currentUser.rank || 'MEMBER').toUpperCase();
+                const rank = currentUser.rank.toUpperCase();
 
+                // Logik Penolakan Baki Reseller
                 if (rank === 'RESELLER') {
-                    const { data: sender } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                    if (sender.balance < amount) throw new Error("BAKI TIDAK MENCUKUPI!");
-                    const newSenderBal = sender.balance - amount;
-                    await _supabase.from('database panel').update({ balance: newSenderBal }).eq('username', currentUser.username);
-                    currentUser.balance = newSenderBal;
-                    updateBalanceUI(newSenderBal);
+                    const { data: me } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
+                    if (me.balance < amount) throw new Error("Baki anda tidak cukup!");
+                    
+                    await _supabase.from('database panel').update({ balance: me.balance - amount }).eq('username', currentUser.username);
+                    currentUser.balance = me.balance - amount;
+                    updateBalanceUI(currentUser.balance);
                 }
 
-                const newReceiverBal = (parseFloat(receiver.balance) || 0) + amount;
-                await _supabase.from('database panel').update({ balance: newReceiverBal }).eq('username', target);
-
-                status.innerText = "> SUCCESS: KREDIT DIHANTAR";
+                // Tambah baki ke target
+                await _supabase.from('database panel').update({ balance: receiver.balance + amount }).eq('username', target);
+                status.innerText = "TRANSFER BERJAYA!";
                 status.style.color = "#22c55e";
-                document.getElementById('tf-amount').value = "";
-                document.getElementById('tf-username').value = "";
             } catch (e) {
-                status.innerText = "> ERROR: " + e.message;
+                status.innerText = e.message.toUpperCase();
                 status.style.color = "#ef4444";
-            } finally { btn.disabled = false; }
-        }
-
-        async function checkNickname() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const nickEl = document.getElementById('res-nick');
-            if (uid.length < 5) return;
-            document.getElementById('nick-info').classList.remove('hidden');
-            nickEl.innerText = "SCANNING...";
-            try {
-                const res = await fetch(`${API_BASE}/api/ff/nickname?uid=${uid}`).then(r => r.json());
-                const info = Array.isArray(res) ? res[0] : res;
-                nickEl.innerText = info?.nickname || "NOT FOUND";
-            } catch (e) { nickEl.innerText = "ERROR SCAN"; }
-        }
-
-        async function executeOrder() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const price = parseFloat(document.getElementById('package-select').value);
-            const statusEl = document.getElementById('status-msg');
-            if (!uid) return;
-            statusEl.innerText = "> INITIALIZING...";
-            try {
-                const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                if (user.balance < price) throw new Error("KREDIT TIDAK MENCUKUPI");
-                const api = await fetch(`${API_BASE}/api/ff/likes?uid=${uid}`).then(r => r.json());
-                if (api.status == "1" || api.message === "Success") {
-                    const newBal = user.balance - price;
-                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
-                    updateBalanceUI(newBal);
-                    statusEl.innerText = "> SUCCESS: INJECTION COMPLETE";
-                    statusEl.style.color = "#22c55e";
-                } else { throw new Error("API REJECTED"); }
-            } catch (e) {
-                statusEl.innerText = `> ERROR: ${e.message.toUpperCase()}`;
-                statusEl.style.color = "#ef4444";
             }
         }
 
+        function updateBalanceUI(amt) { document.getElementById('balance-amt').innerText = parseFloat(amt).toFixed(2); }
         function showQR() {
-            const amt = document.getElementById('topup-select').value;
-            document.getElementById('qr-amount-txt').innerText = `RM ${parseFloat(amt).toFixed(2)}`;
+            document.getElementById('qr-amount-txt').innerText = `RM ${document.getElementById('topup-select').value}`;
             document.getElementById('qr-modal').classList.remove('hidden');
         }
-        function closeQR() { document.getElementById('qr-modal').classList.add('hidden'); }
         function sendWA() {
-            const amt = document.getElementById('topup-select').value;
-            window.open(`https://wa.me/${WA_NUMBER}?text=Topup%20Username:%20${currentUser.username.toUpperCase()}%20Jumlah:%20RM${amt}`, '_blank');
-            closeQR();
+            window.open(`https://wa.me/601165406482?text=Topup%20${currentUser.username.toUpperCase()}`, '_blank');
+        }
+
+        async function executeOrder() {
+            const uid = document.getElementById('target-uid').value;
+            const price = parseFloat(document.getElementById('package-select').value);
+            const status = document.getElementById('status-msg');
+            
+            try {
+                const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
+                if (user.balance < price) throw new Error("Kredit tidak cukup!");
+
+                status.innerText = "> PROCESSING...";
+                const res = await fetch(`${API_BASE}/api/ff/likes?uid=${uid}`).then(r => r.json());
+
+                if (res.status == "1" || res.message === "Success") {
+                    await _supabase.from('database panel').update({ balance: user.balance - price }).eq('username', currentUser.username);
+                    updateBalanceUI(user.balance - price);
+                    status.innerText = "> SUCCESS!";
+                } else { throw new Error("FAILED"); }
+            } catch (e) { status.innerText = "> ERROR: " + e.message.toUpperCase(); }
         }
     </script>
 </body>
