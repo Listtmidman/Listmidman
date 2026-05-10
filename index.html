@@ -18,13 +18,21 @@
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
         .hidden { display: none !important; }
         .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
-        
         .notif-box { background: rgba(167, 139, 250, 0.1); border-left: 4px solid #a78bfa; padding: 12px; border-radius: 8px; margin-bottom: 15px; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } 50% { box-shadow: 0 0 10px rgba(167, 139, 250, 0.4); } 100% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } }
-
         .modal-custom { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
         .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 10px; font-weight: bold; color: #666; border-bottom: 2px solid transparent; cursor: pointer; }
         .tab-btn.active { color: #a78bfa; border-bottom: 2px solid #a78bfa; }
+        .player-card { background: rgba(0,0,0,0.6); border: 1px solid rgba(167,139,250,0.3); border-radius: 16px; padding: 14px; margin-top: 8px; }
+        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .player-row:last-child { border-bottom: none; }
+        .check-btn { background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: bold; padding: 8px 14px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); font-size: 10px; letter-spacing: 1px; transition: 0.2s; white-space: nowrap; }
+        .check-btn:hover { background: rgba(59,130,246,0.35); }
+        .check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .uid-row { display: flex; gap: 8px; align-items: center; }
+        .uid-row .input-field { flex: 1; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(96,165,250,0.3); border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 4px; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -41,7 +49,7 @@
     </div>
 
     <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
-        
+
         <div class="notif-box">
             <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
             <p class="text-[11px] text-white mt-1">
@@ -69,7 +77,48 @@
 
         <div id="page-terminal" class="glass p-6 space-y-4">
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase italic">Injection Terminal</h4>
-            <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
+
+            <div class="uid-row">
+                <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
+                <button id="check-btn" onclick="checkId()" class="check-btn">CHECK ID</button>
+            </div>
+
+            <div id="player-info" class="hidden player-card">
+                <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest mb-2">Player Info</p>
+                <div class="player-row">
+                    <span class="text-[10px] text-gray-400">Nickname</span>
+                    <span id="pi-nickname" class="text-[10px] text-white font-bold">-</span>
+                </div>
+                <div class="player-row">
+                    <span class="text-[10px] text-gray-400">Region</span>
+                    <span id="pi-region" class="text-[10px] text-blue-300 font-bold">-</span>
+                </div>
+                <div class="player-row">
+                    <span class="text-[10px] text-gray-400">Level</span>
+                    <span id="pi-level" class="text-[10px] text-yellow-300 font-bold">-</span>
+                </div>
+                <div class="player-row">
+                    <span class="text-[10px] text-gray-400">Likes</span>
+                    <span id="pi-likes" class="text-[10px] text-pink-400 font-bold">-</span>
+                </div>
+                <div class="player-row">
+                    <span class="text-[10px] text-gray-400">EXP</span>
+                    <span id="pi-exp" class="text-[10px] text-purple-300 font-bold">-</span>
+                </div>
+                <div class="player-row">
+                    <span class="text-[10px] text-gray-400">Honor Score</span>
+                    <span id="pi-honor" class="text-[10px] text-green-400 font-bold">-</span>
+                </div>
+                <div class="player-row">
+                    <span class="text-[10px] text-gray-400">Joined</span>
+                    <span id="pi-created" class="text-[10px] text-gray-300">-</span>
+                </div>
+                <div id="pi-bio-row" class="player-row hidden">
+                    <span class="text-[10px] text-gray-400">Bio</span>
+                    <span id="pi-bio" class="text-[10px] text-gray-300 text-right max-w-[60%]">-</span>
+                </div>
+            </div>
+
             <label class="text-[10px] text-gray-500 uppercase ml-1">Pilih Pakej Likes:</label>
             <select id="package-select" class="input-field"></select>
             <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
@@ -78,7 +127,7 @@
 
         <div id="page-topup" class="hidden glass p-6 space-y-4">
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
-            
+
             <div class="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl">
                 <p class="text-[9px] text-purple-300 mb-2 font-bold uppercase">Manual Topup (Fast Response):</p>
                 <div id="reseller-list" class="space-y-2">
@@ -128,7 +177,10 @@
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const API_BASE = "https://likeff-beast--listpagemrbeast.replit.app";
+
+        const FF_API_KEY = "T526C4";
+        const FF_LIKES_API = "https://api.ffbd.store/xM/L";
+        const FF_NICKNAME_API = "https://api.ffbd.store/nickname";
 
         let currentUser = null;
 
@@ -139,28 +191,28 @@
 
         const PRICING = {
             MEMBER: [
-                { val: 0.80, label: "100 LIKES - $0.80" },
-                { val: 4.00, label: "500 LIKES - $4.00" },
-                { val: 7.50, label: "1,000 LIKES - $7.50" },
-                { val: 35.00, label: "5,000 LIKES - $35.00" },
-                { val: 60.00, label: "10,000 LIKES - $60.00" },
-                { val: 90.00, label: "30,000 LIKES - $90.00" }
+                { val: 0.80,  qty: 100,   label: "100 LIKES - $0.80" },
+                { val: 4.00,  qty: 500,   label: "500 LIKES - $4.00" },
+                { val: 7.50,  qty: 1000,  label: "1,000 LIKES - $7.50" },
+                { val: 35.00, qty: 5000,  label: "5,000 LIKES - $35.00" },
+                { val: 60.00, qty: 10000, label: "10,000 LIKES - $60.00" },
+                { val: 90.00, qty: 30000, label: "30,000 LIKES - $90.00" }
             ],
             RESELLER: [
-                { val: 0.50, label: "100 LIKES - $0.50" },
-                { val: 2.50, label: "500 LIKES - $2.50" },
-                { val: 4.50, label: "1,000 LIKES - $4.50" },
-                { val: 15.00, label: "5,000 LIKES - $15.00" },
-                { val: 25.00, label: "10,000 LIKES - $25.00" },
-                { val: 45.00, label: "30,000 LIKES - $45.00" }
+                { val: 0.50,  qty: 100,   label: "100 LIKES - $0.50" },
+                { val: 2.50,  qty: 500,   label: "500 LIKES - $2.50" },
+                { val: 4.50,  qty: 1000,  label: "1,000 LIKES - $4.50" },
+                { val: 15.00, qty: 5000,  label: "5,000 LIKES - $15.00" },
+                { val: 25.00, qty: 10000, label: "10,000 LIKES - $25.00" },
+                { val: 45.00, qty: 30000, label: "30,000 LIKES - $45.00" }
             ],
             OWNER: [
-                { val: 0.10, label: "100 LIKES - $0.10" },
-                { val: 0.40, label: "500 LIKES - $0.40" },
-                { val: 0.80, label: "1,000 LIKES - $0.80" },
-                { val: 3.50, label: "5,000 LIKES - $3.50" },
-                { val: 6.50, label: "10,000 LIKES - $6.50" },
-                { val: 18.00, label: "30,000 LIKES - $18.00" }
+                { val: 0.10, qty: 100,   label: "100 LIKES - $0.10" },
+                { val: 0.40, qty: 500,   label: "500 LIKES - $0.40" },
+                { val: 0.80, qty: 1000,  label: "1,000 LIKES - $0.80" },
+                { val: 3.50, qty: 5000,  label: "5,000 LIKES - $3.50" },
+                { val: 6.50, qty: 10000, label: "10,000 LIKES - $6.50" },
+                { val: 18.00, qty: 30000, label: "30,000 LIKES - $18.00" }
             ]
         };
 
@@ -176,14 +228,11 @@
             const passField = document.getElementById('auth-pass');
             const loginBtn = document.getElementById('login-btn');
             const authMsg = document.getElementById('auth-msg');
-            
+
             const user = userField.value.trim().toLowerCase();
             const pass = passField.value.trim();
 
-            if (!user || !pass) {
-                alert("Username dan Password tidak boleh kosong!");
-                return;
-            }
+            if (!user || !pass) { alert("Username dan Password tidak boleh kosong!"); return; }
 
             loginBtn.disabled = true;
             authMsg.innerText = "> PROSES TUNGGU SEBENTAR...";
@@ -193,7 +242,6 @@
                 if (type === 'register') {
                     const { data: existing } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
                     if (existing) throw new Error("Username sudah berdaftar!");
-
                     const { error } = await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
                     if (error) throw error;
                     alert("Berjaya daftar! Sila Log Masuk.");
@@ -216,7 +264,7 @@
                     }
 
                     const plans = PRICING[rank] || PRICING.MEMBER;
-                    document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
+                    document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}" data-qty="${p.qty}">${p.label}</option>`).join('');
                     loadResellers();
                 }
             } catch (e) {
@@ -238,6 +286,61 @@
             `).join('');
         }
 
+        async function checkId() {
+            const uid = document.getElementById('target-uid').value.trim();
+            const btn = document.getElementById('check-btn');
+            const infoBox = document.getElementById('player-info');
+
+            if (!uid) { alert("Masukkan UID dahulu!"); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>CHECK...';
+            infoBox.classList.add('hidden');
+
+            try {
+                const res = await fetch(`${FF_NICKNAME_API}?uid=${uid}`);
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                const data = await res.json();
+
+                if (!Array.isArray(data) || data.length === 0) throw new Error("UID tidak dijumpai");
+
+                const basic = data[0] || {};
+                const detail = data[1] || {};
+
+                const nickname = basic.nickname || '-';
+                const region = basic.region || '-';
+                const level = detail.level ?? '-';
+                const likes = detail.likes != null ? Number(detail.likes).toLocaleString() : '-';
+                const exp = detail.exp != null ? Number(detail.exp).toLocaleString() : '-';
+                const honor = detail.honor_score ?? '-';
+                const created = detail.account_created || '-';
+                const bio = detail.player_bio || '';
+
+                document.getElementById('pi-nickname').innerText = nickname;
+                document.getElementById('pi-region').innerText = region;
+                document.getElementById('pi-level').innerText = level;
+                document.getElementById('pi-likes').innerText = likes;
+                document.getElementById('pi-exp').innerText = exp;
+                document.getElementById('pi-honor').innerText = honor;
+                document.getElementById('pi-created').innerText = created;
+
+                const bioRow = document.getElementById('pi-bio-row');
+                if (bio) {
+                    document.getElementById('pi-bio').innerText = bio;
+                    bioRow.classList.remove('hidden');
+                } else {
+                    bioRow.classList.add('hidden');
+                }
+
+                infoBox.classList.remove('hidden');
+            } catch (e) {
+                alert("Gagal semak ID: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'CHECK ID';
+            }
+        }
+
         async function executeTransfer() {
             const target = document.getElementById('tf-username').value.trim().toLowerCase();
             const amount = parseFloat(document.getElementById('tf-amount').value);
@@ -247,7 +350,7 @@
             try {
                 const { data: receiver } = await _supabase.from('database panel').select('balance').eq('username', target).maybeSingle();
                 if (!receiver) throw new Error("User tidak wujud!");
-                
+
                 const rank = currentUser.rank.toUpperCase();
 
                 if (rank === 'RESELLER') {
@@ -281,30 +384,57 @@
         }
 
         async function executeOrder() {
-            const uid = document.getElementById('target-uid').value;
-            const price = parseFloat(document.getElementById('package-select').value);
+            const uid = document.getElementById('target-uid').value.trim();
+            const selectEl = document.getElementById('package-select');
+            const price = parseFloat(selectEl.value);
+            const qty = parseInt(selectEl.selectedOptions[0]?.dataset?.qty || 0);
             const status = document.getElementById('status-msg');
             const btn = document.getElementById('order-btn');
 
             if (!uid) return alert("Masukkan UID!");
+            if (!qty) return alert("Pilih pakej yang sah!");
+
             btn.disabled = true;
+            status.style.color = "#a78bfa";
+            status.innerText = "> CHECKING BALANCE...";
 
             try {
                 const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                 if (user.balance < price) throw new Error("Kredit tidak cukup!");
 
-                status.innerText = "> PROCESSING...";
-                const res = await fetch(`${API_BASE}/api/ff/likes?uid=${uid}`).then(r => r.json());
+                status.innerText = "> CONNECTING API...";
 
-                if (res.status == "1" || res.message === "Success") {
-                    const finalBal = user.balance - price;
-                    await _supabase.from('database panel').update({ balance: finalBal }).eq('username', currentUser.username);
-                    updateBalanceUI(finalBal);
-                    status.innerText = "> SUCCESS: INJECTED!";
-                    status.style.color = "#22c55e";
-                } else {
-                    throw new Error("API FAILED");
+                const apiUrl = `${FF_LIKES_API}?key=${FF_API_KEY}&uid=${uid}`;
+                let res, data;
+
+                try {
+                    res = await fetch(apiUrl);
+                    data = await res.json();
+                } catch (fetchErr) {
+                    throw new Error("TIDAK DAPAT SAMBUNG API");
                 }
+
+                const success =
+                    data?.status == 1 ||
+                    data?.status === "1" ||
+                    data?.status === "success" ||
+                    data?.success === true ||
+                    data?.message?.toLowerCase?.() === "success" ||
+                    data?.code == 200 ||
+                    (res.ok && data && !data?.error && data?.status !== 0 && data?.status !== "0");
+
+                if (!success) {
+                    const errMsg = data?.message || data?.error || data?.msg || JSON.stringify(data);
+                    throw new Error("API: " + errMsg);
+                }
+
+                const finalBal = user.balance - price;
+                await _supabase.from('database panel').update({ balance: finalBal }).eq('username', currentUser.username);
+                currentUser.balance = finalBal;
+                updateBalanceUI(finalBal);
+
+                status.innerText = `> SUCCESS: ${qty.toLocaleString()} LIKES DIHANTAR!`;
+                status.style.color = "#22c55e";
             } catch (e) {
                 status.innerText = "> ERROR: " + e.message.toUpperCase();
                 status.style.color = "#ef4444";
