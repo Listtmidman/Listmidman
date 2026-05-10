@@ -115,23 +115,16 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const API_KEY = "T526C4";
-        const FF_LIKES_API    = "https://api.ffbd.store/xM/L";
+        const API_KEY        = "T526C4";
         const FF_NICKNAME_API = "https://api.ffbd.store/nickname";
-
-        // Senarai proxy backup — cuba satu persatu kalau CORS gagal
-        const PROXIES = [
-            url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-            url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-            url => `https://thingproxy.freeboard.io/fetch/${url}`,
-        ];
+        const FF_LIKES_API    = "https://api.ffbd.store/xM/L";
 
         let currentUser = null;
 
         const PRICING = {
-            MEMBER:   [ { val: 0.80, label: "100 LIKES - $0.80"   }, { val: 7.50, label: "1,000 LIKES - $7.50" } ],
-            RESELLER: [ { val: 0.50, label: "100 LIKES - $0.50"   }, { val: 4.50, label: "1,000 LIKES - $4.50" } ],
-            OWNER:    [ { val: 0.10, label: "100 LIKES - $0.10"   }, { val: 0.80, label: "1,000 LIKES - $0.80" } ]
+            MEMBER:   [ { val: 0.80, label: "100 LIKES - $0.80" }, { val: 7.50, label: "1,000 LIKES - $7.50" } ],
+            RESELLER: [ { val: 0.50, label: "100 LIKES - $0.50" }, { val: 4.50, label: "1,000 LIKES - $4.50" } ],
+            OWNER:    [ { val: 0.10, label: "100 LIKES - $0.10" }, { val: 0.80, label: "1,000 LIKES - $0.80" } ]
         };
 
         const RESELLERS = [
@@ -139,6 +132,38 @@
             { name: "ZERO",      phone: "60198424337"  },
             { name: "MOR",       phone: "601112614932" }
         ];
+
+        // Cuba fetch dengan pelbagai cara — direct dulu, lepas tu proxy backup
+        async function ffFetch(targetUrl) {
+            const attempts = [
+                // 1. Direct (works if API ada CORS header)
+                () => fetch(targetUrl),
+                // 2. corsproxy.io
+                () => fetch(`https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`),
+                // 3. allorigins raw
+                () => fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`),
+                // 4. allorigins get (response wrapped dalam .contents)
+                async () => {
+                    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+                    const j = await r.json();
+                    // allorigins bungkus dalam { contents: "..." }
+                    return new Response(j.contents, { status: 200 });
+                },
+                // 5. jsonp.afeld.me
+                () => fetch(`https://jsonp.afeld.me/?url=${encodeURIComponent(targetUrl)}`),
+            ];
+
+            for (const attempt of attempts) {
+                try {
+                    const res = await attempt();
+                    if (!res.ok) continue;
+                    const text = await res.text();
+                    if (!text || text.trim().startsWith('<')) continue; // HTML error page
+                    return JSON.parse(text);
+                } catch (_) { continue; }
+            }
+            throw new Error("API tidak dapat dihubungi. Semua laluan gagal.");
+        }
 
         function switchTab(tab) {
             ['page-terminal','page-topup','page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
@@ -197,37 +222,25 @@
             `).join('');
         }
 
-        // Cuba direct dulu, kemudian cuba proxy satu persatu kalau gagal
-        async function ffFetch(url) {
-            try {
-                const res = await fetch(url, { mode: 'cors' });
-                if (res.ok) return await res.json();
-            } catch (_) {}
-
-            for (const makeProxy of PROXIES) {
-                try {
-                    const res = await fetch(makeProxy(url));
-                    if (res.ok) return await res.json();
-                } catch (_) {}
-            }
-            throw new Error("Semua sambungan API gagal. Cuba semula.");
-        }
-
         async function checkId() {
             const uid = document.getElementById('target-uid').value.trim();
             const btn = document.getElementById('check-btn');
             if (!uid) return;
             btn.innerText = "...";
             btn.disabled  = true;
+            document.getElementById('player-info').classList.add('hidden');
             try {
+                // Response adalah array: [0] = nickname+region, [1] = level+likes dll
                 const data  = await ffFetch(`${FF_NICKNAME_API}?uid=${uid}`);
                 const info  = Array.isArray(data) ? data[0] : data;
                 const extra = Array.isArray(data) && data[1] ? data[1] : info;
+
                 if (!info || !info.nickname) throw new Error("UID tidak dijumpai");
+
                 document.getElementById('pi-nickname').innerText = info.nickname;
-                document.getElementById('pi-region').innerText   = info.region || "N/A";
-                document.getElementById('pi-level').innerText    = extra.level || "N/A";
-                document.getElementById('pi-likes').innerText    = extra.likes || "N/A";
+                document.getElementById('pi-region').innerText   = info.region   || "N/A";
+                document.getElementById('pi-level').innerText    = extra.level   || "N/A";
+                document.getElementById('pi-likes').innerText    = extra.likes !== undefined ? extra.likes.toLocaleString() : "N/A";
                 document.getElementById('player-info').classList.remove('hidden');
             } catch (e) {
                 alert("Ralat Check ID: " + e.message);
@@ -241,23 +254,31 @@
             const uid    = document.getElementById('target-uid').value.trim();
             const price  = parseFloat(document.getElementById('package-select').value);
             const status = document.getElementById('status-msg');
+            const btn    = document.getElementById('order-btn');
             if (!uid) return alert("Masukkan UID!");
 
-            document.getElementById('order-btn').disabled = true;
+            btn.disabled = true;
             try {
                 const { data: user, error } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                 if (error) throw error;
-                if (user.balance < price) throw new Error("Kredit tidak mencukupi! Baki: $" + parseFloat(user.balance).toFixed(2));
+                if (parseFloat(user.balance) < price) throw new Error("Kredit tidak mencukupi! Baki: $" + parseFloat(user.balance).toFixed(2));
 
-                status.innerText = "> INJECTING...";
+                status.innerText = "> CONNECTING API...";
 
                 const result = await ffFetch(`${FF_LIKES_API}?key=${API_KEY}&uid=${uid}`);
 
-                if (result.status !== "success" && result.status !== 1 && result.status !== "1") {
-                    throw new Error(result.message || result.msg || "API gagal — cuba semula");
+                // Semak pelbagai format success response
+                const isSuccess = result.status === "success"
+                    || result.status === 1
+                    || result.status === "1"
+                    || result.success === true
+                    || result.success === 1;
+
+                if (!isSuccess) {
+                    throw new Error(result.message || result.msg || result.error || "API gagal — cuba semula");
                 }
 
-                const newBal = parseFloat((user.balance - price).toFixed(2));
+                const newBal = parseFloat((parseFloat(user.balance) - price).toFixed(2));
                 await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
                 document.getElementById('balance-amt').innerText = newBal.toFixed(2);
                 currentUser.balance = newBal;
@@ -265,7 +286,7 @@
             } catch (e) {
                 status.innerText = "> GAGAL: " + e.message;
             } finally {
-                document.getElementById('order-btn').disabled = false;
+                btn.disabled = false;
             }
         }
 
