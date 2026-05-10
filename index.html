@@ -11,9 +11,9 @@
         body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Courier New', monospace; }
         .glass { background: rgba(19, 16, 31, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(167, 139, 250, 0.2); border-radius: 24px; }
         .neon-border { box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
-        .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; width: 100%; transition: 0.3s; }
+        .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; width: 100%; transition: 0.3s; font-family: 'Courier New', monospace; box-sizing: border-box; }
         .input-field:focus { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167, 139, 250, 0.2); }
-        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; border: none; display: block; text-align: center; transition: 0.2s; }
+        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; border: none; display: block; text-align: center; transition: 0.2s; font-family: 'Courier New', monospace; font-size: 14px; }
         .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
         .hidden { display: none !important; }
@@ -26,7 +26,8 @@
         .player-card { background: rgba(0,0,0,0.6); border: 1px solid rgba(167,139,250,0.3); border-radius: 16px; padding: 14px; margin-top: 8px; }
         .player-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .player-row:last-child { border-bottom: none; }
-        .check-btn { background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: bold; padding: 8px 14px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); font-size: 10px; letter-spacing: 1px; transition: 0.2s; white-space: nowrap; }
+        .check-btn { background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: bold; padding: 8px 14px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); font-size: 10px; letter-spacing: 1px; transition: 0.2s; white-space: nowrap; font-family: 'Courier New', monospace; }
+        .check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -36,8 +37,8 @@
         <div class="flex flex-col space-y-4">
             <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
             <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
-            <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
-            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
+            <button onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
+            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2" style="background:none;border:none;cursor:pointer;">Register New Uplink</button>
         </div>
         <p id="auth-msg" class="text-[10px] mt-4 text-center text-gray-500 font-mono"></p>
     </div>
@@ -88,24 +89,24 @@
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
             <div id="reseller-list" class="space-y-2"></div>
             <hr class="border-gray-800">
-            <button onclick="showQR()" class="btn-primary bg-green-500">CONFIRM TOPUP (OWNER QR)</button>
+            <button onclick="showQR()" class="btn-primary" style="background:#16a34a;">CONFIRM TOPUP (OWNER QR)</button>
         </div>
 
         <div id="page-transfer" class="hidden glass p-6 space-y-4">
             <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Admin Transfer</h4>
             <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
             <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
-            <button onclick="executeTransfer()" class="btn-primary bg-green-500">KREDITKAN MEMBER</button>
+            <button onclick="executeTransfer()" class="btn-primary" style="background:#16a34a;">KREDITKAN MEMBER</button>
         </div>
 
-        <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 p-2 uppercase tracking-widest">[-] Logout Session</button>
+        <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 p-2 uppercase tracking-widest" style="background:none;border:none;cursor:pointer;">[-] Logout Session</button>
     </div>
 
     <div id="qr-modal" class="modal-custom hidden">
         <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
             <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl mb-4 border-2 border-white">
-            <button onclick="sendWA()" class="btn-primary bg-purple-600">HANTAR RESIT</button>
-            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="text-xs text-gray-500 mt-4 block mx-auto">TUTUP</button>
+            <button onclick="sendWA()" class="btn-primary" style="background:#7c3aed;">HANTAR RESIT</button>
+            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="text-xs text-gray-500 mt-4 block mx-auto" style="background:none;border:none;cursor:pointer;">TUTUP</button>
         </div>
     </div>
 
@@ -115,25 +116,32 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const API_KEY = "T526C4";
-        const FF_LIKES_API = "https://api.ffbd.store/xM/L";
-        const FF_NICKNAME_API = "https://api.ffbd.store/nickname"; 
+        const FF_LIKES_API    = "https://api.ffbd.store/xM/L";
+        const FF_NICKNAME_API = "https://api.ffbd.store/nickname";
+
+        // Senarai proxy backup — cuba satu persatu kalau CORS gagal
+        const PROXIES = [
+            url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+            url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            url => `https://thingproxy.freeboard.io/fetch/${url}`,
+        ];
 
         let currentUser = null;
 
         const PRICING = {
-            MEMBER: [ { val: 0.80, label: "100 LIKES - $0.80" }, { val: 7.50, label: "1,000 LIKES - $7.50" } ],
-            RESELLER: [ { val: 0.50, label: "100 LIKES - $0.50" }, { val: 4.50, label: "1,000 LIKES - $4.50" } ],
-            OWNER: [ { val: 0.10, label: "100 LIKES - $0.10" }, { val: 0.80, label: "1,000 LIKES - $0.80" } ]
+            MEMBER:   [ { val: 0.80, label: "100 LIKES - $0.80"   }, { val: 7.50, label: "1,000 LIKES - $7.50" } ],
+            RESELLER: [ { val: 0.50, label: "100 LIKES - $0.50"   }, { val: 4.50, label: "1,000 LIKES - $4.50" } ],
+            OWNER:    [ { val: 0.10, label: "100 LIKES - $0.10"   }, { val: 0.80, label: "1,000 LIKES - $0.80" } ]
         };
 
         const RESELLERS = [
             { name: "LUQQSTORE", phone: "601127112378" },
-            { name: "ZERO", phone: "60198424337" },
-            { name: "MOR", phone: "601112614932" }
+            { name: "ZERO",      phone: "60198424337"  },
+            { name: "MOR",       phone: "601112614932" }
         ];
 
         function switchTab(tab) {
-            ['page-terminal', 'page-topup', 'page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            ['page-terminal','page-topup','page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById('page-' + tab).classList.remove('hidden');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
@@ -142,11 +150,9 @@
         async function handleAuth(type) {
             const user = document.getElementById('auth-user').value.trim().toLowerCase();
             const pass = document.getElementById('auth-pass').value.trim();
-            const msg = document.getElementById('auth-msg');
-
+            const msg  = document.getElementById('auth-msg');
             if (!user || !pass) return alert("Sila isi Username & Password!");
             msg.innerText = "> MENGHUBUNGKAN...";
-
             try {
                 if (type === 'register') {
                     const { data: exists } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
@@ -159,40 +165,52 @@
                     const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
                     if (error) throw error;
                     if (!data) throw new Error("Username atau Password salah!");
-                    
                     currentUser = data;
                     initDashboard();
                 }
-            } catch (e) { 
-                alert(e.message); 
+            } catch (e) {
+                alert(e.message);
                 msg.innerText = "> RALAT AKSES";
-                console.error(e);
             }
         }
 
         function initDashboard() {
             document.getElementById('auth-container').classList.add('hidden');
             document.getElementById('main-dashboard').classList.remove('hidden');
-            
-            // Set Data
             document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-            document.getElementById('balance-amt').innerText = parseFloat(currentUser.balance).toFixed(2);
-            document.getElementById('user-rank').innerText = (currentUser.rank || 'MEMBER').toUpperCase();
-            
-            const rank = (currentUser.rank || 'MEMBER').toUpperCase();
+            document.getElementById('balance-amt').innerText  = parseFloat(currentUser.balance).toFixed(2);
+            document.getElementById('user-rank').innerText    = (currentUser.rank || 'MEMBER').toUpperCase();
+
+            const rank  = (currentUser.rank || 'MEMBER').toUpperCase();
             const plans = PRICING[rank] || PRICING.MEMBER;
             document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
-            
+
             if (rank === 'OWNER' || rank === 'RESELLER') {
                 document.getElementById('tab-transfer').classList.remove('hidden');
             }
-            
+
             document.getElementById('reseller-list').innerHTML = RESELLERS.map(r => `
-                <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-purple-500/20">
-                    <span class="text-[11px] font-bold text-white">${r.name} RESELLER</span>
-                    <a href="https://wa.me/${r.phone}" target="_blank" class="text-[9px] bg-green-600 text-white px-3 py-1.5 rounded-lg font-bold">WHATSAPP</a>
+                <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.4);padding:12px;border-radius:12px;border:1px solid rgba(167,139,250,0.2);">
+                    <span style="font-size:11px;font-weight:bold;color:white;">${r.name} RESELLER</span>
+                    <a href="https://wa.me/${r.phone}" target="_blank" style="font-size:9px;background:#16a34a;color:white;padding:6px 12px;border-radius:8px;font-weight:bold;text-decoration:none;">WHATSAPP</a>
                 </div>
             `).join('');
+        }
+
+        // Cuba direct dulu, kemudian cuba proxy satu persatu kalau gagal
+        async function ffFetch(url) {
+            try {
+                const res = await fetch(url, { mode: 'cors' });
+                if (res.ok) return await res.json();
+            } catch (_) {}
+
+            for (const makeProxy of PROXIES) {
+                try {
+                    const res = await fetch(makeProxy(url));
+                    if (res.ok) return await res.json();
+                } catch (_) {}
+            }
+            throw new Error("Semua sambungan API gagal. Cuba semula.");
         }
 
         async function checkId() {
@@ -200,70 +218,77 @@
             const btn = document.getElementById('check-btn');
             if (!uid) return;
             btn.innerText = "...";
-            btn.disabled = true;
-
+            btn.disabled  = true;
             try {
-                const res = await fetch(`${FF_NICKNAME_API}?uid=${uid}`, { mode: 'cors' });
-                const data = await res.json();
-                const info = Array.isArray(data) ? data[0] : data;
+                const data  = await ffFetch(`${FF_NICKNAME_API}?uid=${uid}`);
+                const info  = Array.isArray(data) ? data[0] : data;
                 const extra = Array.isArray(data) && data[1] ? data[1] : info;
-
-                if (!info || !info.nickname) throw new Error("Tak dijumpai");
-
+                if (!info || !info.nickname) throw new Error("UID tidak dijumpai");
                 document.getElementById('pi-nickname').innerText = info.nickname;
-                document.getElementById('pi-region').innerText = info.region || "N/A";
-                document.getElementById('pi-level').innerText = extra.level || "N/A";
-                document.getElementById('pi-likes').innerText = extra.likes || "N/A";
+                document.getElementById('pi-region').innerText   = info.region || "N/A";
+                document.getElementById('pi-level').innerText    = extra.level || "N/A";
+                document.getElementById('pi-likes').innerText    = extra.likes || "N/A";
                 document.getElementById('player-info').classList.remove('hidden');
             } catch (e) {
-                alert("ID Tak Sah atau API Error");
+                alert("Ralat Check ID: " + e.message);
             } finally {
                 btn.innerText = "CHECK ID";
-                btn.disabled = false;
+                btn.disabled  = false;
             }
         }
 
         async function executeOrder() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const price = parseFloat(document.getElementById('package-select').value);
+            const uid    = document.getElementById('target-uid').value.trim();
+            const price  = parseFloat(document.getElementById('package-select').value);
             const status = document.getElementById('status-msg');
             if (!uid) return alert("Masukkan UID!");
 
+            document.getElementById('order-btn').disabled = true;
             try {
                 const { data: user, error } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                if (user.balance < price) throw new Error("Kredit kurang!");
+                if (error) throw error;
+                if (user.balance < price) throw new Error("Kredit tidak mencukupi! Baki: $" + parseFloat(user.balance).toFixed(2));
 
                 status.innerText = "> INJECTING...";
-                const res = await fetch(`${FF_LIKES_API}?key=${API_KEY}&uid=${uid}`);
-                const result = await res.json();
 
-                if (result.status !== "success" && result.status !== 1) throw new Error("API Offline");
+                const result = await ffFetch(`${FF_LIKES_API}?key=${API_KEY}&uid=${uid}`);
 
-                const newBal = user.balance - price;
+                if (result.status !== "success" && result.status !== 1 && result.status !== "1") {
+                    throw new Error(result.message || result.msg || "API gagal — cuba semula");
+                }
+
+                const newBal = parseFloat((user.balance - price).toFixed(2));
                 await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
                 document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                status.innerText = "> BERJAYA!";
-            } catch (e) { status.innerText = "> GAGAL: " + e.message; }
+                currentUser.balance = newBal;
+                status.innerText = "> BERJAYA! LIKES SEDANG DIPROSES.";
+            } catch (e) {
+                status.innerText = "> GAGAL: " + e.message;
+            } finally {
+                document.getElementById('order-btn').disabled = false;
+            }
         }
 
         async function executeTransfer() {
             const target = document.getElementById('tf-username').value.trim().toLowerCase();
-            const amt = parseFloat(document.getElementById('tf-amount').value);
-            if (!target || isNaN(amt)) return alert("Isi Username & Amaun!");
+            const amt    = parseFloat(document.getElementById('tf-amount').value);
+            if (!target || isNaN(amt) || amt <= 0) return alert("Isi Username & Amaun yang sah!");
             try {
-                const { data: rec } = await _supabase.from('database panel').select('balance').eq('username', target).single();
-                if (!rec) throw new Error("User tidak wujud!");
+                const { data: rec, error } = await _supabase.from('database panel').select('balance').eq('username', target).single();
+                if (error || !rec) throw new Error("User tidak wujud!");
                 await _supabase.from('database panel').update({ balance: rec.balance + amt }).eq('username', target);
-                alert(`Berjaya pindah $${amt} ke ${target}`);
-            } catch (e) { alert("Gagal: " + e.message); }
+                alert(`Berjaya pindah $${amt.toFixed(2)} ke ${target}`);
+                document.getElementById('tf-username').value = '';
+                document.getElementById('tf-amount').value   = '';
+            } catch (e) {
+                alert("Gagal: " + e.message);
+            }
         }
 
-        function showQR() {
-            document.getElementById('qr-modal').classList.remove('hidden');
-        }
+        function showQR() { document.getElementById('qr-modal').classList.remove('hidden'); }
 
-        function sendWA() { 
-            window.open(`https://wa.me/601165406482?text=SAYA%20DAH%20TOPUP%20USER%20${currentUser.username.toUpperCase()}`, '_blank'); 
+        function sendWA() {
+            window.open(`https://wa.me/601165406482?text=SAYA%20DAH%20TOPUP%20USER%20${currentUser.username.toUpperCase()}`, '_blank');
         }
     </script>
 </body>
