@@ -127,14 +127,12 @@
 
         <div id="page-topup" class="hidden glass p-6 space-y-4">
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
-
             <div class="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl">
                 <p class="text-[9px] text-purple-300 mb-2 font-bold uppercase">Manual Topup (Fast Response):</p>
                 <div id="reseller-list" class="space-y-2">
                     <p class="text-[10px] text-gray-500 italic">Memuatkan senarai reseller...</p>
                 </div>
             </div>
-
             <hr class="border-gray-800">
             <p class="text-[10px] text-center text-gray-500">ATAU TOPUP VIA OWNER (QR):</p>
             <select id="topup-select" class="input-field">
@@ -178,9 +176,9 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const FF_API_KEY = "T526C4";
         const FF_LIKES_API = "https://api.ffbd.store/xM/L";
         const FF_NICKNAME_API = "https://api.ffbd.store/nickname";
+        const FF_KEY = "T526C4";
 
         let currentUser = null;
 
@@ -217,27 +215,21 @@
         };
 
         function switchTab(tab) {
-            ['page-terminal', 'page-topup', 'page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
-            document.getElementById('page-' + tab).classList.remove('hidden');
+            ['page-terminal','page-topup','page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            document.getElementById('page-'+tab).classList.remove('hidden');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('tab-'+tab).classList.add('active');
         }
 
         async function handleAuth(type) {
-            const userField = document.getElementById('auth-user');
-            const passField = document.getElementById('auth-pass');
+            const user = document.getElementById('auth-user').value.trim().toLowerCase();
+            const pass = document.getElementById('auth-pass').value.trim();
             const loginBtn = document.getElementById('login-btn');
             const authMsg = document.getElementById('auth-msg');
-
-            const user = userField.value.trim().toLowerCase();
-            const pass = passField.value.trim();
-
             if (!user || !pass) { alert("Username dan Password tidak boleh kosong!"); return; }
-
             loginBtn.disabled = true;
             authMsg.innerText = "> PROSES TUNGGU SEBENTAR...";
             authMsg.style.color = "#a78bfa";
-
             try {
                 if (type === 'register') {
                     const { data: existing } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
@@ -249,20 +241,14 @@
                 } else {
                     const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
                     if (error || !data) throw new Error("ID atau Password salah!");
-
                     currentUser = data;
                     document.getElementById('auth-container').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
                     updateBalanceUI(currentUser.balance);
-
                     const rank = (data.rank || 'MEMBER').toUpperCase();
                     document.getElementById('user-rank').innerText = rank;
-
-                    if (rank === 'OWNER' || rank === 'RESELLER') {
-                        document.getElementById('tab-transfer').classList.remove('hidden');
-                    }
-
+                    if (rank === 'OWNER' || rank === 'RESELLER') document.getElementById('tab-transfer').classList.remove('hidden');
                     const plans = PRICING[rank] || PRICING.MEMBER;
                     document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}" data-qty="${p.qty}">${p.label}</option>`).join('');
                     loadResellers();
@@ -271,74 +257,47 @@
                 alert(e.message);
                 authMsg.innerText = "> ERROR: " + e.message.toUpperCase();
                 authMsg.style.color = "#ef4444";
-            } finally {
-                loginBtn.disabled = false;
-            }
+            } finally { loginBtn.disabled = false; }
         }
 
         function loadResellers() {
-            const container = document.getElementById('reseller-list');
-            container.innerHTML = RESELLER_CONTACTS.map(res => `
+            document.getElementById('reseller-list').innerHTML = RESELLER_CONTACTS.map(res => `
                 <div class="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-purple-500/20">
                     <span class="text-[10px] font-bold text-white">${res.name}</span>
                     <a href="https://wa.me/${res.phone}?text=Bos%20nak%20isi%20kredit%20panel" target="_blank" class="text-[9px] bg-green-600 text-white px-2 py-1 rounded">WHATSAPP</a>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
         async function checkId() {
             const uid = document.getElementById('target-uid').value.trim();
             const btn = document.getElementById('check-btn');
             const infoBox = document.getElementById('player-info');
-
             if (!uid) { alert("Masukkan UID dahulu!"); return; }
-
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span>CHECK...';
             infoBox.classList.add('hidden');
-
             try {
                 const res = await fetch(`${FF_NICKNAME_API}?uid=${uid}`);
                 if (!res.ok) throw new Error("HTTP " + res.status);
                 const data = await res.json();
-
                 if (!Array.isArray(data) || data.length === 0) throw new Error("UID tidak dijumpai");
-
                 const basic = data[0] || {};
                 const detail = data[1] || {};
-
-                const nickname = basic.nickname || '-';
-                const region = basic.region || '-';
-                const level = detail.level ?? '-';
-                const likes = detail.likes != null ? Number(detail.likes).toLocaleString() : '-';
-                const exp = detail.exp != null ? Number(detail.exp).toLocaleString() : '-';
-                const honor = detail.honor_score ?? '-';
-                const created = detail.account_created || '-';
-                const bio = detail.player_bio || '';
-
-                document.getElementById('pi-nickname').innerText = nickname;
-                document.getElementById('pi-region').innerText = region;
-                document.getElementById('pi-level').innerText = level;
-                document.getElementById('pi-likes').innerText = likes;
-                document.getElementById('pi-exp').innerText = exp;
-                document.getElementById('pi-honor').innerText = honor;
-                document.getElementById('pi-created').innerText = created;
-
+                document.getElementById('pi-nickname').innerText = basic.nickname || '-';
+                document.getElementById('pi-region').innerText = basic.region || '-';
+                document.getElementById('pi-level').innerText = detail.level ?? '-';
+                document.getElementById('pi-likes').innerText = detail.likes != null ? Number(detail.likes).toLocaleString() : '-';
+                document.getElementById('pi-exp').innerText = detail.exp != null ? Number(detail.exp).toLocaleString() : '-';
+                document.getElementById('pi-honor').innerText = detail.honor_score ?? '-';
+                document.getElementById('pi-created').innerText = detail.account_created || '-';
                 const bioRow = document.getElementById('pi-bio-row');
-                if (bio) {
-                    document.getElementById('pi-bio').innerText = bio;
+                if (detail.player_bio) {
+                    document.getElementById('pi-bio').innerText = detail.player_bio;
                     bioRow.classList.remove('hidden');
-                } else {
-                    bioRow.classList.add('hidden');
-                }
-
+                } else { bioRow.classList.add('hidden'); }
                 infoBox.classList.remove('hidden');
-            } catch (e) {
-                alert("Gagal semak ID: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'CHECK ID';
-            }
+            } catch (e) { alert("Gagal semak ID: " + e.message); }
+            finally { btn.disabled = false; btn.innerHTML = 'CHECK ID'; }
         }
 
         async function executeTransfer() {
@@ -346,13 +305,10 @@
             const amount = parseFloat(document.getElementById('tf-amount').value);
             const status = document.getElementById('tf-status');
             if (!target || isNaN(amount) || amount <= 0) return alert("Sila isi info!");
-
             try {
                 const { data: receiver } = await _supabase.from('database panel').select('balance').eq('username', target).maybeSingle();
                 if (!receiver) throw new Error("User tidak wujud!");
-
                 const rank = currentUser.rank.toUpperCase();
-
                 if (rank === 'RESELLER') {
                     const { data: me } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                     if (me.balance < amount) throw new Error("Baki tidak cukup!");
@@ -360,14 +316,10 @@
                     currentUser.balance = me.balance - amount;
                     updateBalanceUI(currentUser.balance);
                 }
-
                 await _supabase.from('database panel').update({ balance: receiver.balance + amount }).eq('username', target);
                 status.innerText = "TRANSFER BERJAYA!";
                 status.style.color = "#22c55e";
-            } catch (e) {
-                status.innerText = e.message.toUpperCase();
-                status.style.color = "#ef4444";
-            }
+            } catch (e) { status.innerText = e.message.toUpperCase(); status.style.color = "#ef4444"; }
         }
 
         function updateBalanceUI(amt) {
@@ -390,57 +342,39 @@
             const qty = parseInt(selectEl.selectedOptions[0]?.dataset?.qty || 0);
             const status = document.getElementById('status-msg');
             const btn = document.getElementById('order-btn');
-
             if (!uid) return alert("Masukkan UID!");
             if (!qty) return alert("Pilih pakej yang sah!");
-
             btn.disabled = true;
             status.style.color = "#a78bfa";
             status.innerText = "> CHECKING BALANCE...";
-
             try {
                 const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                 if (user.balance < price) throw new Error("Kredit tidak cukup!");
-
                 status.innerText = "> CONNECTING API...";
-
-                const apiUrl = `${FF_LIKES_API}?key=${FF_API_KEY}&uid=${uid}`;
                 let res, data;
-
                 try {
-                    res = await fetch(apiUrl);
+                    res = await fetch(`${FF_LIKES_API}?key=${FF_KEY}&uid=${uid}`);
                     data = await res.json();
-                } catch (fetchErr) {
-                    throw new Error("TIDAK DAPAT SAMBUNG API");
-                }
-
+                } catch (fetchErr) { throw new Error("TIDAK DAPAT SAMBUNG API"); }
                 const success =
-                    data?.status == 1 ||
-                    data?.status === "1" ||
-                    data?.status === "success" ||
-                    data?.success === true ||
-                    data?.message?.toLowerCase?.() === "success" ||
+                    data?.status == 1 || data?.status === "1" || data?.status === "success" ||
+                    data?.success === true || data?.message?.toLowerCase?.() === "success" ||
                     data?.code == 200 ||
                     (res.ok && data && !data?.error && data?.status !== 0 && data?.status !== "0");
-
                 if (!success) {
                     const errMsg = data?.message || data?.error || data?.msg || JSON.stringify(data);
                     throw new Error("API: " + errMsg);
                 }
-
                 const finalBal = user.balance - price;
                 await _supabase.from('database panel').update({ balance: finalBal }).eq('username', currentUser.username);
                 currentUser.balance = finalBal;
                 updateBalanceUI(finalBal);
-
                 status.innerText = `> SUCCESS: ${qty.toLocaleString()} LIKES DIHANTAR!`;
                 status.style.color = "#22c55e";
             } catch (e) {
                 status.innerText = "> ERROR: " + e.message.toUpperCase();
                 status.style.color = "#ef4444";
-            } finally {
-                btn.disabled = false;
-            }
+            } finally { btn.disabled = false; }
         }
     </script>
 </body>
