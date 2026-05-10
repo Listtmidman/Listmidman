@@ -19,7 +19,7 @@
         .hidden { display: none !important; }
         .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
         .notif-box { background: rgba(167, 139, 250, 0.1); border-left: 4px solid #a78bfa; padding: 12px; border-radius: 8px; margin-bottom: 15px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } 50% { box-shadow: 0 0 10px rgba(167, 139, 250, 0.4); } 100% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } }
+        @keyframes pulse { 0%{box-shadow:0 0 0px rgba(167,139,250,0.2);}50%{box-shadow:0 0 10px rgba(167,139,250,0.4);}100%{box-shadow:0 0 0px rgba(167,139,250,0.2);} }
         .modal-custom { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
         .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 10px; font-weight: bold; color: #666; border-bottom: 2px solid transparent; cursor: pointer; }
         .tab-btn.active { color: #a78bfa; border-bottom: 2px solid #a78bfa; }
@@ -37,345 +37,247 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <div id="auth-container" class="w-full max-w-md glass p-8 neon-border">
-        <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
-        <div class="flex flex-col space-y-4">
-            <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
-            <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
-            <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
-            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
-        </div>
-        <p id="auth-msg" class="text-[10px] mt-4 text-center"></p>
+<div id="auth-container" class="w-full max-w-md glass p-8 neon-border">
+    <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
+    <div class="flex flex-col space-y-4">
+        <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
+        <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
+        <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
+        <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
     </div>
+    <p id="auth-msg" class="text-[10px] mt-4 text-center"></p>
+</div>
 
-    <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
-
-        <div class="notif-box">
-            <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
-            <p class="text-[11px] text-white mt-1">
-                🚀 <span class="text-purple-400">PENTING:</span> Jika Owner busy, sila hubungi senarai Reseller di tab TOPUP untuk kreditkan akaun anda.
-            </p>
-        </div>
-
-        <div class="glass p-6 flex justify-between items-center neon-border">
-            <div>
-                <span id="user-rank" class="rank-badge bg-purple-900/50 text-purple-300">MEMBER</span>
-                <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
-                <h3 id="display-name" class="text-xl font-black text-white">---</h3>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] text-green-400 font-bold uppercase">Available Credits</p>
-                <p class="text-2xl font-black text-green-400 tracking-tighter">$<span id="balance-amt">0.00</span></p>
-            </div>
-        </div>
-
-        <div class="flex border-b border-gray-800">
-            <div id="tab-terminal" class="tab-btn active" onclick="switchTab('terminal')">TERMINAL</div>
-            <div id="tab-topup" class="tab-btn" onclick="switchTab('topup')">TOPUP</div>
-            <div id="tab-transfer" class="tab-btn hidden" onclick="switchTab('transfer')">TRANSFER</div>
-        </div>
-
-        <div id="page-terminal" class="glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase italic">Injection Terminal</h4>
-
-            <div class="uid-row">
-                <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
-                <button id="check-btn" onclick="checkId()" class="check-btn">CHECK ID</button>
-            </div>
-
-            <div id="player-info" class="hidden player-card">
-                <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest mb-2">Player Info</p>
-                <div class="player-row">
-                    <span class="text-[10px] text-gray-400">Nickname</span>
-                    <span id="pi-nickname" class="text-[10px] text-white font-bold">-</span>
-                </div>
-                <div class="player-row">
-                    <span class="text-[10px] text-gray-400">Region</span>
-                    <span id="pi-region" class="text-[10px] text-blue-300 font-bold">-</span>
-                </div>
-                <div class="player-row">
-                    <span class="text-[10px] text-gray-400">Level</span>
-                    <span id="pi-level" class="text-[10px] text-yellow-300 font-bold">-</span>
-                </div>
-                <div class="player-row">
-                    <span class="text-[10px] text-gray-400">Likes</span>
-                    <span id="pi-likes" class="text-[10px] text-pink-400 font-bold">-</span>
-                </div>
-                <div class="player-row">
-                    <span class="text-[10px] text-gray-400">EXP</span>
-                    <span id="pi-exp" class="text-[10px] text-purple-300 font-bold">-</span>
-                </div>
-                <div class="player-row">
-                    <span class="text-[10px] text-gray-400">Honor Score</span>
-                    <span id="pi-honor" class="text-[10px] text-green-400 font-bold">-</span>
-                </div>
-                <div class="player-row">
-                    <span class="text-[10px] text-gray-400">Joined</span>
-                    <span id="pi-created" class="text-[10px] text-gray-300">-</span>
-                </div>
-                <div id="pi-bio-row" class="player-row hidden">
-                    <span class="text-[10px] text-gray-400">Bio</span>
-                    <span id="pi-bio" class="text-[10px] text-gray-300 text-right max-w-[60%]">-</span>
-                </div>
-            </div>
-
-            <label class="text-[10px] text-gray-500 uppercase ml-1">Pilih Pakej Likes:</label>
-            <select id="package-select" class="input-field"></select>
-            <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
-            <p id="status-msg" class="text-center text-[10px] font-mono">&gt; STANDBY...</p>
-        </div>
-
-        <div id="page-topup" class="hidden glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
-            <div class="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl">
-                <p class="text-[9px] text-purple-300 mb-2 font-bold uppercase">Manual Topup (Fast Response):</p>
-                <div id="reseller-list" class="space-y-2">
-                    <p class="text-[10px] text-gray-500 italic">Memuatkan senarai reseller...</p>
-                </div>
-            </div>
-            <hr class="border-gray-800">
-            <p class="text-[10px] text-center text-gray-500">ATAU TOPUP VIA OWNER (QR):</p>
-            <select id="topup-select" class="input-field">
-                <option value="5">RM 5.00</option>
-                <option value="10">RM 10.00</option>
-                <option value="20">RM 20.00</option>
-                <option value="30">RM 30.00</option>
-                <option value="50">RM 50.00</option>
-                <option value="100">RM 100.00</option>
-                <option value="150">RM 150.00</option>
-                <option value="200">RM 200.00</option>
-            </select>
-            <button onclick="showQR()" class="btn-primary bg-green-500 hover:bg-green-400">CONFIRM TOPUP</button>
-        </div>
-
-        <div id="page-transfer" class="hidden glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Admin/Reseller Transfer</h4>
-            <div class="space-y-3">
-                <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
-                <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
-                <button id="tf-btn" onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">KREDITKAN MEMBER</button>
-            </div>
-            <p id="tf-status" class="text-[10px] text-center font-mono uppercase mt-2"></p>
-        </div>
-
-        <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 p-2 uppercase tracking-widest">[-] Logout Session</button>
+<div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
+    <div class="notif-box">
+        <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
+        <p class="text-[11px] text-white mt-1">🚀 <span class="text-purple-400">PENTING:</span> Jika Owner busy, sila hubungi senarai Reseller di tab TOPUP untuk kreditkan akaun anda.</p>
     </div>
-
-    <div id="qr-modal" class="modal-custom hidden">
-        <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
-            <h2 class="text-white font-bold text-sm">OWNER QR PAYMENT</h2>
-            <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl my-4 border-2 border-white">
-            <p id="qr-amount-txt" class="text-2xl font-black text-green-400 mb-4">RM 0.00</p>
-            <button onclick="sendWA()" class="btn-primary bg-purple-600">HANTAR RESIT KE OWNER</button>
-            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="text-xs text-gray-500 mt-4 block mx-auto">TUTUP</button>
+    <div class="glass p-6 flex justify-between items-center neon-border">
+        <div>
+            <span id="user-rank" class="rank-badge bg-purple-900/50 text-purple-300">MEMBER</span>
+            <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
+            <h3 id="display-name" class="text-xl font-black text-white">---</h3>
+        </div>
+        <div class="text-right">
+            <p class="text-[10px] text-green-400 font-bold uppercase">Available Credits</p>
+            <p class="text-2xl font-black text-green-400 tracking-tighter">$<span id="balance-amt">0.00</span></p>
         </div>
     </div>
+    <div class="flex border-b border-gray-800">
+        <div id="tab-terminal" class="tab-btn active" onclick="switchTab('terminal')">TERMINAL</div>
+        <div id="tab-topup" class="tab-btn" onclick="switchTab('topup')">TOPUP</div>
+        <div id="tab-transfer" class="tab-btn hidden" onclick="switchTab('transfer')">TRANSFER</div>
+    </div>
+    <div id="page-terminal" class="glass p-6 space-y-4">
+        <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase italic">Injection Terminal</h4>
+        <div class="uid-row">
+            <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
+            <button id="check-btn" onclick="checkId()" class="check-btn">CHECK ID</button>
+        </div>
+        <div id="player-info" class="hidden player-card">
+            <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest mb-2">Player Info</p>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Nickname</span><span id="pi-nickname" class="text-[10px] text-white font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Region</span><span id="pi-region" class="text-[10px] text-blue-300 font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Level</span><span id="pi-level" class="text-[10px] text-yellow-300 font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Likes</span><span id="pi-likes" class="text-[10px] text-pink-400 font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">EXP</span><span id="pi-exp" class="text-[10px] text-purple-300 font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Honor Score</span><span id="pi-honor" class="text-[10px] text-green-400 font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Joined</span><span id="pi-created" class="text-[10px] text-gray-300">-</span></div>
+            <div id="pi-bio-row" class="player-row hidden"><span class="text-[10px] text-gray-400">Bio</span><span id="pi-bio" class="text-[10px] text-gray-300 text-right max-w-[60%]">-</span></div>
+        </div>
+        <label class="text-[10px] text-gray-500 uppercase ml-1">Pilih Pakej Likes:</label>
+        <select id="package-select" class="input-field"></select>
+        <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
+        <p id="status-msg" class="text-center text-[10px] font-mono">&gt; STANDBY...</p>
+    </div>
+    <div id="page-topup" class="hidden glass p-6 space-y-4">
+        <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
+        <div class="bg-purple-900/20 border border-purple-500/30 p-3 rounded-xl">
+            <p class="text-[9px] text-purple-300 mb-2 font-bold uppercase">Manual Topup (Fast Response):</p>
+            <div id="reseller-list" class="space-y-2"><p class="text-[10px] text-gray-500 italic">Memuatkan senarai reseller...</p></div>
+        </div>
+        <hr class="border-gray-800">
+        <p class="text-[10px] text-center text-gray-500">ATAU TOPUP VIA OWNER (QR):</p>
+        <select id="topup-select" class="input-field">
+            <option value="5">RM 5.00</option><option value="10">RM 10.00</option>
+            <option value="20">RM 20.00</option><option value="30">RM 30.00</option>
+            <option value="50">RM 50.00</option><option value="100">RM 100.00</option>
+            <option value="150">RM 150.00</option><option value="200">RM 200.00</option>
+        </select>
+        <button onclick="showQR()" class="btn-primary bg-green-500 hover:bg-green-400">CONFIRM TOPUP</button>
+    </div>
+    <div id="page-transfer" class="hidden glass p-6 space-y-4">
+        <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Admin/Reseller Transfer</h4>
+        <div class="space-y-3">
+            <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
+            <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
+            <button id="tf-btn" onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">KREDITKAN MEMBER</button>
+        </div>
+        <p id="tf-status" class="text-[10px] text-center font-mono uppercase mt-2"></p>
+    </div>
+    <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 p-2 uppercase tracking-widest">[-] Logout Session</button>
+</div>
 
-    <script>
-        const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<div id="qr-modal" class="modal-custom hidden">
+    <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
+        <h2 class="text-white font-bold text-sm">OWNER QR PAYMENT</h2>
+        <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl my-4 border-2 border-white">
+        <p id="qr-amount-txt" class="text-2xl font-black text-green-400 mb-4">RM 0.00</p>
+        <button onclick="sendWA()" class="btn-primary bg-purple-600">HANTAR RESIT KE OWNER</button>
+        <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="text-xs text-gray-500 mt-4 block mx-auto">TUTUP</button>
+    </div>
+</div>
 
-        const FF_LIKES_API = "https://api.ffbd.store/xM/L";
-        const FF_NICKNAME_API = "https://api.ffbd.store/nickname";
-        const FF_KEY = "T526C4";
+<script>
+    const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null;
+    const PROXY         = "https://23ae84fc-e94f-47f5-b387-e62c30b86d6a-00-1u47fxijx02r3.sisko.replit.dev";
+    const FF_LIKES_API  = PROXY + "/api/ff/likes";
+    const FF_NICK_API   = PROXY + "/api/ff/nickname";
 
-        const RESELLER_CONTACTS = [
-            { name: "LUQQSTORE RESELLER", phone: "601127112378" },
-            { name: "ZERO RESELLER", phone: "60198424337" }
-        ];
+    let currentUser = null;
 
-        const PRICING = {
-            MEMBER: [
-                { val: 0.80,  qty: 100,   label: "100 LIKES - $0.80" },
-                { val: 4.00,  qty: 500,   label: "500 LIKES - $4.00" },
-                { val: 7.50,  qty: 1000,  label: "1,000 LIKES - $7.50" },
-                { val: 35.00, qty: 5000,  label: "5,000 LIKES - $35.00" },
-                { val: 60.00, qty: 10000, label: "10,000 LIKES - $60.00" },
-                { val: 90.00, qty: 30000, label: "30,000 LIKES - $90.00" }
-            ],
-            RESELLER: [
-                { val: 0.50,  qty: 100,   label: "100 LIKES - $0.50" },
-                { val: 2.50,  qty: 500,   label: "500 LIKES - $2.50" },
-                { val: 4.50,  qty: 1000,  label: "1,000 LIKES - $4.50" },
-                { val: 15.00, qty: 5000,  label: "5,000 LIKES - $15.00" },
-                { val: 25.00, qty: 10000, label: "10,000 LIKES - $25.00" },
-                { val: 45.00, qty: 30000, label: "30,000 LIKES - $45.00" }
-            ],
-            OWNER: [
-                { val: 0.10, qty: 100,   label: "100 LIKES - $0.10" },
-                { val: 0.40, qty: 500,   label: "500 LIKES - $0.40" },
-                { val: 0.80, qty: 1000,  label: "1,000 LIKES - $0.80" },
-                { val: 3.50, qty: 5000,  label: "5,000 LIKES - $3.50" },
-                { val: 6.50, qty: 10000, label: "10,000 LIKES - $6.50" },
-                { val: 18.00, qty: 30000, label: "30,000 LIKES - $18.00" }
-            ]
-        };
+    const RESELLER_CONTACTS = [
+        { name: "LUQQSTORE RESELLER", phone: "601127112378" },
+        { name: "ZERO RESELLER",      phone: "60198424337" }
+    ];
 
-        function switchTab(tab) {
-            ['page-terminal','page-topup','page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
-            document.getElementById('page-'+tab).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-'+tab).classList.add('active');
-        }
+    const PRICING = {
+        MEMBER:   [{val:0.80,qty:100,label:"100 LIKES - $0.80"},{val:4.00,qty:500,label:"500 LIKES - $4.00"},{val:7.50,qty:1000,label:"1,000 LIKES - $7.50"},{val:35.00,qty:5000,label:"5,000 LIKES - $35.00"},{val:60.00,qty:10000,label:"10,000 LIKES - $60.00"},{val:90.00,qty:30000,label:"30,000 LIKES - $90.00"}],
+        RESELLER: [{val:0.50,qty:100,label:"100 LIKES - $0.50"},{val:2.50,qty:500,label:"500 LIKES - $2.50"},{val:4.50,qty:1000,label:"1,000 LIKES - $4.50"},{val:15.00,qty:5000,label:"5,000 LIKES - $15.00"},{val:25.00,qty:10000,label:"10,000 LIKES - $25.00"},{val:45.00,qty:30000,label:"30,000 LIKES - $45.00"}],
+        OWNER:    [{val:0.10,qty:100,label:"100 LIKES - $0.10"},{val:0.40,qty:500,label:"500 LIKES - $0.40"},{val:0.80,qty:1000,label:"1,000 LIKES - $0.80"},{val:3.50,qty:5000,label:"5,000 LIKES - $3.50"},{val:6.50,qty:10000,label:"10,000 LIKES - $6.50"},{val:18.00,qty:30000,label:"30,000 LIKES - $18.00"}]
+    };
 
-        async function handleAuth(type) {
-            const user = document.getElementById('auth-user').value.trim().toLowerCase();
-            const pass = document.getElementById('auth-pass').value.trim();
-            const loginBtn = document.getElementById('login-btn');
-            const authMsg = document.getElementById('auth-msg');
-            if (!user || !pass) { alert("Username dan Password tidak boleh kosong!"); return; }
-            loginBtn.disabled = true;
-            authMsg.innerText = "> PROSES TUNGGU SEBENTAR...";
-            authMsg.style.color = "#a78bfa";
-            try {
-                if (type === 'register') {
-                    const { data: existing } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
-                    if (existing) throw new Error("Username sudah berdaftar!");
-                    const { error } = await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
-                    if (error) throw error;
-                    alert("Berjaya daftar! Sila Log Masuk.");
-                    authMsg.innerText = "> REGISTERED. PLEASE LOGIN.";
-                } else {
-                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
-                    if (error || !data) throw new Error("ID atau Password salah!");
-                    currentUser = data;
-                    document.getElementById('auth-container').classList.add('hidden');
-                    document.getElementById('main-dashboard').classList.remove('hidden');
-                    document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-                    updateBalanceUI(currentUser.balance);
-                    const rank = (data.rank || 'MEMBER').toUpperCase();
-                    document.getElementById('user-rank').innerText = rank;
-                    if (rank === 'OWNER' || rank === 'RESELLER') document.getElementById('tab-transfer').classList.remove('hidden');
-                    const plans = PRICING[rank] || PRICING.MEMBER;
-                    document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}" data-qty="${p.qty}">${p.label}</option>`).join('');
-                    loadResellers();
-                }
-            } catch (e) {
-                alert(e.message);
-                authMsg.innerText = "> ERROR: " + e.message.toUpperCase();
-                authMsg.style.color = "#ef4444";
-            } finally { loginBtn.disabled = false; }
-        }
+    function switchTab(tab) {
+        ['page-terminal','page-topup','page-transfer'].forEach(p=>document.getElementById(p).classList.add('hidden'));
+        document.getElementById('page-'+tab).classList.remove('hidden');
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.getElementById('tab-'+tab).classList.add('active');
+    }
 
-        function loadResellers() {
-            document.getElementById('reseller-list').innerHTML = RESELLER_CONTACTS.map(res => `
-                <div class="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-purple-500/20">
-                    <span class="text-[10px] font-bold text-white">${res.name}</span>
-                    <a href="https://wa.me/${res.phone}?text=Bos%20nak%20isi%20kredit%20panel" target="_blank" class="text-[9px] bg-green-600 text-white px-2 py-1 rounded">WHATSAPP</a>
-                </div>`).join('');
-        }
+    async function handleAuth(type) {
+        const user = document.getElementById('auth-user').value.trim().toLowerCase();
+        const pass = document.getElementById('auth-pass').value.trim();
+        const loginBtn = document.getElementById('login-btn');
+        const authMsg  = document.getElementById('auth-msg');
+        if (!user||!pass){alert("Username dan Password tidak boleh kosong!");return;}
+        loginBtn.disabled=true; authMsg.innerText="> PROSES..."; authMsg.style.color="#a78bfa";
+        try {
+            if (type==='register') {
+                const {data:ex}=await _supabase.from('database panel').select('username').eq('username',user).maybeSingle();
+                if(ex) throw new Error("Username sudah berdaftar!");
+                const {error}=await _supabase.from('database panel').insert([{username:user,password:pass,balance:0,rank:'MEMBER'}]);
+                if(error) throw error;
+                alert("Berjaya daftar! Sila Log Masuk."); authMsg.innerText="> REGISTERED. LOGIN.";
+            } else {
+                const {data,error}=await _supabase.from('database panel').select('*').eq('username',user).eq('password',pass).maybeSingle();
+                if(error||!data) throw new Error("ID atau Password salah!");
+                currentUser=data;
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('main-dashboard').classList.remove('hidden');
+                document.getElementById('display-name').innerText=currentUser.username.toUpperCase();
+                updateBalanceUI(currentUser.balance);
+                const rank=(data.rank||'MEMBER').toUpperCase();
+                document.getElementById('user-rank').innerText=rank;
+                if(rank==='OWNER'||rank==='RESELLER') document.getElementById('tab-transfer').classList.remove('hidden');
+                const plans=PRICING[rank]||PRICING.MEMBER;
+                document.getElementById('package-select').innerHTML=plans.map(p=>`<option value="${p.val}" data-qty="${p.qty}">${p.label}</option>`).join('');
+                loadResellers();
+            }
+        } catch(e){alert(e.message);authMsg.innerText="> ERROR: "+e.message.toUpperCase();authMsg.style.color="#ef4444";}
+        finally{loginBtn.disabled=false;}
+    }
 
-        async function checkId() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const btn = document.getElementById('check-btn');
-            const infoBox = document.getElementById('player-info');
-            if (!uid) { alert("Masukkan UID dahulu!"); return; }
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span>CHECK...';
-            infoBox.classList.add('hidden');
-            try {
-                const res = await fetch(`${FF_NICKNAME_API}?uid=${uid}`);
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                const data = await res.json();
-                if (!Array.isArray(data) || data.length === 0) throw new Error("UID tidak dijumpai");
-                const basic = data[0] || {};
-                const detail = data[1] || {};
-                document.getElementById('pi-nickname').innerText = basic.nickname || '-';
-                document.getElementById('pi-region').innerText = basic.region || '-';
-                document.getElementById('pi-level').innerText = detail.level ?? '-';
-                document.getElementById('pi-likes').innerText = detail.likes != null ? Number(detail.likes).toLocaleString() : '-';
-                document.getElementById('pi-exp').innerText = detail.exp != null ? Number(detail.exp).toLocaleString() : '-';
-                document.getElementById('pi-honor').innerText = detail.honor_score ?? '-';
-                document.getElementById('pi-created').innerText = detail.account_created || '-';
-                const bioRow = document.getElementById('pi-bio-row');
-                if (detail.player_bio) {
-                    document.getElementById('pi-bio').innerText = detail.player_bio;
-                    bioRow.classList.remove('hidden');
-                } else { bioRow.classList.add('hidden'); }
-                infoBox.classList.remove('hidden');
-            } catch (e) { alert("Gagal semak ID: " + e.message); }
-            finally { btn.disabled = false; btn.innerHTML = 'CHECK ID'; }
-        }
+    function loadResellers() {
+        document.getElementById('reseller-list').innerHTML=RESELLER_CONTACTS.map(r=>`
+            <div class="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-purple-500/20">
+                <span class="text-[10px] font-bold text-white">${r.name}</span>
+                <a href="https://wa.me/${r.phone}?text=Bos%20nak%20isi%20kredit%20panel" target="_blank" class="text-[9px] bg-green-600 text-white px-2 py-1 rounded">WHATSAPP</a>
+            </div>`).join('');
+    }
 
-        async function executeTransfer() {
-            const target = document.getElementById('tf-username').value.trim().toLowerCase();
-            const amount = parseFloat(document.getElementById('tf-amount').value);
-            const status = document.getElementById('tf-status');
-            if (!target || isNaN(amount) || amount <= 0) return alert("Sila isi info!");
-            try {
-                const { data: receiver } = await _supabase.from('database panel').select('balance').eq('username', target).maybeSingle();
-                if (!receiver) throw new Error("User tidak wujud!");
-                const rank = currentUser.rank.toUpperCase();
-                if (rank === 'RESELLER') {
-                    const { data: me } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                    if (me.balance < amount) throw new Error("Baki tidak cukup!");
-                    await _supabase.from('database panel').update({ balance: me.balance - amount }).eq('username', currentUser.username);
-                    currentUser.balance = me.balance - amount;
-                    updateBalanceUI(currentUser.balance);
-                }
-                await _supabase.from('database panel').update({ balance: receiver.balance + amount }).eq('username', target);
-                status.innerText = "TRANSFER BERJAYA!";
-                status.style.color = "#22c55e";
-            } catch (e) { status.innerText = e.message.toUpperCase(); status.style.color = "#ef4444"; }
-        }
+    async function checkId() {
+        const uid=document.getElementById('target-uid').value.trim();
+        const btn=document.getElementById('check-btn');
+        const box=document.getElementById('player-info');
+        if(!uid){alert("Masukkan UID dahulu!");return;}
+        btn.disabled=true; btn.innerHTML='<span class="spinner"></span>CHECK...'; box.classList.add('hidden');
+        try {
+            const res=await fetch(`${FF_NICK_API}?uid=${uid}`);
+            if(!res.ok) throw new Error("HTTP "+res.status);
+            const data=await res.json();
+            if(!Array.isArray(data)||data.length===0) throw new Error("UID tidak dijumpai");
+            const b=data[0]||{}, d=data[1]||{};
+            document.getElementById('pi-nickname').innerText=b.nickname||'-';
+            document.getElementById('pi-region').innerText=b.region||'-';
+            document.getElementById('pi-level').innerText=d.level??'-';
+            document.getElementById('pi-likes').innerText=d.likes!=null?Number(d.likes).toLocaleString():'-';
+            document.getElementById('pi-exp').innerText=d.exp!=null?Number(d.exp).toLocaleString():'-';
+            document.getElementById('pi-honor').innerText=d.honor_score??'-';
+            document.getElementById('pi-created').innerText=d.account_created||'-';
+            const bioRow=document.getElementById('pi-bio-row');
+            if(d.player_bio){document.getElementById('pi-bio').innerText=d.player_bio;bioRow.classList.remove('hidden');}
+            else bioRow.classList.add('hidden');
+            box.classList.remove('hidden');
+        } catch(e){alert("Gagal semak ID: "+e.message);}
+        finally{btn.disabled=false;btn.innerHTML='CHECK ID';}
+    }
 
-        function updateBalanceUI(amt) {
-            document.getElementById('balance-amt').innerText = parseFloat(amt).toFixed(2);
-        }
+    async function executeTransfer() {
+        const target=document.getElementById('tf-username').value.trim().toLowerCase();
+        const amount=parseFloat(document.getElementById('tf-amount').value);
+        const status=document.getElementById('tf-status');
+        if(!target||isNaN(amount)||amount<=0) return alert("Sila isi info!");
+        try {
+            const {data:recv}=await _supabase.from('database panel').select('balance').eq('username',target).maybeSingle();
+            if(!recv) throw new Error("User tidak wujud!");
+            const rank=currentUser.rank.toUpperCase();
+            if(rank==='RESELLER'){
+                const {data:me}=await _supabase.from('database panel').select('balance').eq('username',currentUser.username).single();
+                if(me.balance<amount) throw new Error("Baki tidak cukup!");
+                await _supabase.from('database panel').update({balance:me.balance-amount}).eq('username',currentUser.username);
+                currentUser.balance=me.balance-amount; updateBalanceUI(currentUser.balance);
+            }
+            await _supabase.from('database panel').update({balance:recv.balance+amount}).eq('username',target);
+            status.innerText="TRANSFER BERJAYA!"; status.style.color="#22c55e";
+        } catch(e){status.innerText=e.message.toUpperCase();status.style.color="#ef4444";}
+    }
 
-        function showQR() {
-            document.getElementById('qr-amount-txt').innerText = `RM ${document.getElementById('topup-select').value}`;
-            document.getElementById('qr-modal').classList.remove('hidden');
-        }
+    function updateBalanceUI(amt){document.getElementById('balance-amt').innerText=parseFloat(amt).toFixed(2);}
+    function showQR(){document.getElementById('qr-amount-txt').innerText=`RM ${document.getElementById('topup-select').value}`;document.getElementById('qr-modal').classList.remove('hidden');}
+    function sendWA(){window.open(`https://wa.me/601165406482?text=Topup%20${currentUser.username.toUpperCase()}`,'_blank');}
 
-        function sendWA() {
-            window.open(`https://wa.me/601165406482?text=Topup%20${currentUser.username.toUpperCase()}`, '_blank');
-        }
-
-        async function executeOrder() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const selectEl = document.getElementById('package-select');
-            const price = parseFloat(selectEl.value);
-            const qty = parseInt(selectEl.selectedOptions[0]?.dataset?.qty || 0);
-            const status = document.getElementById('status-msg');
-            const btn = document.getElementById('order-btn');
-            if (!uid) return alert("Masukkan UID!");
-            if (!qty) return alert("Pilih pakej yang sah!");
-            btn.disabled = true;
-            status.style.color = "#a78bfa";
-            status.innerText = "> CHECKING BALANCE...";
-            try {
-                const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                if (user.balance < price) throw new Error("Kredit tidak cukup!");
-                status.innerText = "> CONNECTING API...";
-                let res, data;
-                try {
-                    res = await fetch(`${FF_LIKES_API}?key=${FF_KEY}&uid=${uid}`);
-                    data = await res.json();
-                } catch (fetchErr) { throw new Error("TIDAK DAPAT SAMBUNG API"); }
-                const success =
-                    data?.status == 1 || data?.status === "1" || data?.status === "success" ||
-                    data?.success === true || data?.message?.toLowerCase?.() === "success" ||
-                    data?.code == 200 ||
-                    (res.ok && data && !data?.error && data?.status !== 0 && data?.status !== "0");
-                if (!success) {
-                    const errMsg = data?.message || data?.error || data?.msg || JSON.stringify(data);
-                    throw new Error("API: " + errMsg);
-                }
-                const finalBal = user.balance - price;
-                await _supabase.from('database panel').update({ balance: finalBal }).eq('username', currentUser.username);
-                currentUser.balance = finalBal;
-                updateBalanceUI(finalBal);
-                status.innerText = `> SUCCESS: ${qty.toLocaleString()} LIKES DIHANTAR!`;
-                status.style.color = "#22c55e";
-            } catch (e) {
-                status.innerText = "> ERROR: " + e.message.toUpperCase();
-                status.style.color = "#ef4444";
-            } finally { btn.disabled = false; }
-        }
-    </script>
+    async function executeOrder() {
+        const uid=document.getElementById('target-uid').value.trim();
+        const sel=document.getElementById('package-select');
+        const price=parseFloat(sel.value);
+        const qty=parseInt(sel.selectedOptions[0]?.dataset?.qty||0);
+        const status=document.getElementById('status-msg');
+        const btn=document.getElementById('order-btn');
+        if(!uid) return alert("Masukkan UID!");
+        if(!qty) return alert("Pilih pakej yang sah!");
+        btn.disabled=true; status.style.color="#a78bfa"; status.innerText="> CHECKING BALANCE...";
+        try {
+            const {data:user}=await _supabase.from('database panel').select('balance').eq('username',currentUser.username).single();
+            if(user.balance<price) throw new Error("Kredit tidak cukup!");
+            status.innerText="> CONNECTING API...";
+            let res,data;
+            try{res=await fetch(`${FF_LIKES_API}?uid=${uid}`);data=await res.json();}
+            catch(e){throw new Error("TIDAK DAPAT SAMBUNG API");}
+            const ok=data?.status==1||data?.status==="1"||data?.status==="success"||data?.status==2||
+                      data?.success===true||data?.message?.toLowerCase?.()===("success")||data?.code==200||
+                      (res.ok&&data&&!data?.error&&data?.status!==0&&data?.status!=="0");
+            if(!ok){const msg=data?.message||data?.error||data?.msg||JSON.stringify(data);throw new Error("API: "+msg);}
+            const bal=user.balance-price;
+            await _supabase.from('database panel').update({balance:bal}).eq('username',currentUser.username);
+            currentUser.balance=bal; updateBalanceUI(bal);
+            status.innerText=`> SUCCESS: ${qty.toLocaleString()} LIKES DIHANTAR!`; status.style.color="#22c55e";
+        } catch(e){status.innerText="> ERROR: "+e.message.toUpperCase();status.style.color="#ef4444";}
+        finally{btn.disabled=false;}
+    }
+</script>
 </body>
 </html>
