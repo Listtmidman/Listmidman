@@ -94,10 +94,10 @@
         </div>
 
         <div id="page-transfer" class="hidden glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Reseller Control: Transfer Credit</h4>
-            <p class="text-[9px] text-gray-400 text-center">Pindahkan baki kredit anda terus ke akaun Member.</p>
+            <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Credit Management</h4>
+            <p class="text-[9px] text-gray-400 text-center uppercase tracking-tighter">Tambah baki terus ke akaun pengguna.</p>
             <div class="space-y-3">
-                <input id="tf-username" type="text" placeholder="MEMBER USERNAME" class="input-field uppercase">
+                <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
                 <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
                 <button id="tf-btn" onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">SEND CREDIT</button>
             </div>
@@ -132,4 +132,163 @@
     <script>
         const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const API_BASE = "https://likeff-beast--listpagemrbeast.replit.app";
+        const WA_NUMBER = "601165406482";
+
+        let currentUser = null;
+
+        const PRICING_PLANS = {
+            OWNER: [
+                { val: 0.10, label: "100 LIKES - $0.10" },
+                { val: 0.80, label: "1,000 LIKES - $0.80" },
+                { val: 3.50, label: "5,000 LIKES - $3.50" },
+                { val: 15.00, label: "30,000 LIKES - $15.00" }
+            ],
+            RESELLER: [
+                { val: 0.50, label: "100 LIKES - $0.50" },
+                { val: 4.00, label: "1,000 LIKES - $4.00" },
+                { val: 16.00, label: "5,000 LIKES - $16.00" },
+                { val: 80.00, label: "30,000 LIKES - $80.00" }
+            ],
+            MEMBER: [
+                { val: 1.00, label: "100 LIKES - $1.00" },
+                { val: 7.00, label: "1,000 LIKES - $7.00" },
+                { val: 25.00, label: "5,000 LIKES - $25.00" },
+                { val: 120.00, label: "30,000 LIKES - $120.00" }
+            ]
+        };
+
+        function switchTab(tab) {
+            document.getElementById('page-terminal').classList.toggle('hidden', tab !== 'terminal');
+            document.getElementById('page-topup').classList.toggle('hidden', tab !== 'topup');
+            document.getElementById('page-transfer').classList.toggle('hidden', tab !== 'transfer');
+            document.getElementById('tab-terminal').className = tab === 'terminal' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-topup').className = tab === 'topup' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-transfer').className = tab === 'transfer' ? 'tab-btn active' : 'tab-btn';
+        }
+
+        async function handleAuth(type) {
+            const userInput = document.getElementById('auth-user').value.trim().toLowerCase();
+            const passInput = document.getElementById('auth-pass').value.trim();
+            const msg = document.getElementById('auth-msg');
+            if (!userInput || !passInput) return;
+            msg.innerText = "CONNECTING...";
+            try {
+                if (type === 'register') {
+                    const { data: exist } = await _supabase.from('database panel').select('username').eq('username', userInput).maybeSingle();
+                    if (exist) throw new Error("USERNAME SUDAH WUJUD!");
+                    await _supabase.from('database panel').insert([{ username: userInput, password: passInput, balance: 0, rank: 'MEMBER' }]);
+                    msg.innerText = "DAFTAR BERJAYA! SILA LOGIN.";
+                } else {
+                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', userInput).eq('password', passInput).maybeSingle();
+                    if (error || !data) throw new Error("ID/PASSWORD SALAH!");
+                    currentUser = data;
+                    document.getElementById('auth-container').classList.add('hidden');
+                    document.getElementById('main-dashboard').classList.remove('hidden');
+                    document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
+                    updateBalanceUI(currentUser.balance);
+                    
+                    const rank = (data.rank || 'MEMBER').toUpperCase();
+                    document.getElementById('user-rank').innerText = rank;
+                    if(rank === 'RESELLER' || rank === 'OWNER') document.getElementById('tab-transfer').classList.remove('hidden');
+
+                    const plans = PRICING_PLANS[rank] || PRICING_PLANS.MEMBER;
+                    document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
+                }
+            } catch (e) { msg.innerText = String(e.message).toUpperCase(); }
+        }
+
+        function updateBalanceUI(amt) {
+            document.getElementById('balance-amt').innerText = parseFloat(amt).toFixed(2);
+        }
+
+        async function executeTransfer() {
+            const target = document.getElementById('tf-username').value.trim().toLowerCase();
+            const amount = parseFloat(document.getElementById('tf-amount').value);
+            const status = document.getElementById('tf-status');
+            const btn = document.getElementById('tf-btn');
+
+            if (!target || !amount || amount <= 0) return alert("Details tidak lengkap!");
+            if (target === currentUser.username) return alert("Tidak boleh transfer ke diri sendiri!");
+
+            btn.disabled = true;
+            status.innerText = "> PROCESSING...";
+            try {
+                const { data: receiver } = await _supabase.from('database panel').select('balance').eq('username', target).maybeSingle();
+                if (!receiver) throw new Error("TARGET USER TIDAK WUJUD!");
+
+                const rank = (currentUser.rank || 'MEMBER').toUpperCase();
+
+                if (rank === 'RESELLER') {
+                    const { data: sender } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
+                    if (sender.balance < amount) throw new Error("BAKI TIDAK MENCUKUPI!");
+                    const newSenderBal = sender.balance - amount;
+                    await _supabase.from('database panel').update({ balance: newSenderBal }).eq('username', currentUser.username);
+                    currentUser.balance = newSenderBal;
+                    updateBalanceUI(newSenderBal);
+                }
+
+                const newReceiverBal = (parseFloat(receiver.balance) || 0) + amount;
+                await _supabase.from('database panel').update({ balance: newReceiverBal }).eq('username', target);
+
+                status.innerText = "> SUCCESS: KREDIT DIHANTAR";
+                status.style.color = "#22c55e";
+                document.getElementById('tf-amount').value = "";
+                document.getElementById('tf-username').value = "";
+            } catch (e) {
+                status.innerText = "> ERROR: " + e.message;
+                status.style.color = "#ef4444";
+            } finally { btn.disabled = false; }
+        }
+
+        async function checkNickname() {
+            const uid = document.getElementById('target-uid').value.trim();
+            const nickEl = document.getElementById('res-nick');
+            if (uid.length < 5) return;
+            document.getElementById('nick-info').classList.remove('hidden');
+            nickEl.innerText = "SCANNING...";
+            try {
+                const res = await fetch(`${API_BASE}/api/ff/nickname?uid=${uid}`).then(r => r.json());
+                const info = Array.isArray(res) ? res[0] : res;
+                nickEl.innerText = info?.nickname || "NOT FOUND";
+            } catch (e) { nickEl.innerText = "ERROR SCAN"; }
+        }
+
+        async function executeOrder() {
+            const uid = document.getElementById('target-uid').value.trim();
+            const price = parseFloat(document.getElementById('package-select').value);
+            const statusEl = document.getElementById('status-msg');
+            if (!uid) return;
+            statusEl.innerText = "> INITIALIZING...";
+            try {
+                const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
+                if (user.balance < price) throw new Error("KREDIT TIDAK MENCUKUPI");
+                const api = await fetch(`${API_BASE}/api/ff/likes?uid=${uid}`).then(r => r.json());
+                if (api.status == "1" || api.message === "Success") {
+                    const newBal = user.balance - price;
+                    await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
+                    updateBalanceUI(newBal);
+                    statusEl.innerText = "> SUCCESS: INJECTION COMPLETE";
+                    statusEl.style.color = "#22c55e";
+                } else { throw new Error("API REJECTED"); }
+            } catch (e) {
+                statusEl.innerText = `> ERROR: ${e.message.toUpperCase()}`;
+                statusEl.style.color = "#ef4444";
+            }
+        }
+
+        function showQR() {
+            const amt = document.getElementById('topup-select').value;
+            document.getElementById('qr-amount-txt').innerText = `RM ${parseFloat(amt).toFixed(2)}`;
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+        function closeQR() { document.getElementById('qr-modal').classList.add('hidden'); }
+        function sendWA() {
+            const amt = document.getElementById('topup-select').value;
+            window.open(`https://wa.me/${WA_NUMBER}?text=Topup%20Username:%20${currentUser.username.toUpperCase()}%20Jumlah:%20RM${amt}`, '_blank');
+            closeQR();
+        }
+    </script>
+</body>
+</html>
