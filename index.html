@@ -39,20 +39,18 @@
             <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
             <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2">Register New Uplink</button>
         </div>
-        <p id="auth-msg" class="text-[10px] mt-4 text-center"></p>
+        <p id="auth-msg" class="text-[10px] mt-4 text-center text-gray-500 font-mono"></p>
     </div>
 
     <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
         <div class="notif-box">
             <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
-            <p class="text-[11px] text-white mt-1">
-                🚀 <span class="text-purple-400">PENTING:</span> Jika Owner busy, sila hubungi Reseller di tab TOPUP.
-            </p>
+            <p class="text-[11px] text-white mt-1">🚀 Sila hubungi Reseller di tab TOPUP jika ada masalah kredit.</p>
         </div>
 
         <div class="glass p-6 flex justify-between items-center neon-border">
             <div>
-                <span id="user-rank" class="rank-badge bg-purple-900/50 text-purple-300">MEMBER</span>
+                <span id="user-rank" class="rank-badge bg-purple-900/50 text-purple-300">...</span>
                 <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
                 <h3 id="display-name" class="text-xl font-black text-white">---</h3>
             </div>
@@ -90,13 +88,7 @@
             <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
             <div id="reseller-list" class="space-y-2"></div>
             <hr class="border-gray-800">
-            <p class="text-[10px] text-center text-gray-500 uppercase">Topup Via Owner (QR):</p>
-            <select id="topup-select" class="input-field">
-                <option value="5">RM 5.00</option>
-                <option value="10">RM 10.00</option>
-                <option value="50">RM 50.00</option>
-            </select>
-            <button onclick="showQR()" class="btn-primary bg-green-500 hover:bg-green-400">CONFIRM TOPUP</button>
+            <button onclick="showQR()" class="btn-primary bg-green-500">CONFIRM TOPUP (OWNER QR)</button>
         </div>
 
         <div id="page-transfer" class="hidden glass p-6 space-y-4">
@@ -111,9 +103,7 @@
 
     <div id="qr-modal" class="modal-custom hidden">
         <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
-            <h2 class="text-white font-bold text-sm">OWNER QR PAYMENT</h2>
-            <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl my-4 border-2 border-white">
-            <p id="qr-amount-txt" class="text-2xl font-black text-green-400 mb-4">RM 0.00</p>
+            <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl mb-4 border-2 border-white">
             <button onclick="sendWA()" class="btn-primary bg-purple-600">HANTAR RESIT</button>
             <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="text-xs text-gray-500 mt-4 block mx-auto">TUTUP</button>
         </div>
@@ -152,40 +142,55 @@
         async function handleAuth(type) {
             const user = document.getElementById('auth-user').value.trim().toLowerCase();
             const pass = document.getElementById('auth-pass').value.trim();
-            if (!user || !pass) return alert("Isi semua info!");
+            const msg = document.getElementById('auth-msg');
+
+            if (!user || !pass) return alert("Sila isi Username & Password!");
+            msg.innerText = "> MENGHUBUNGKAN...";
 
             try {
                 if (type === 'register') {
                     const { data: exists } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
-                    if (exists) throw new Error("Username wujud!");
-                    await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
-                    alert("Berjaya daftar!");
+                    if (exists) throw new Error("Username sudah wujud!");
+                    const { error } = await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
+                    if (error) throw error;
+                    alert("Berjaya daftar! Sila Login.");
+                    msg.innerText = "";
                 } else {
                     const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
-                    if (!data) throw new Error("Salah login!");
+                    if (error) throw error;
+                    if (!data) throw new Error("Username atau Password salah!");
+                    
                     currentUser = data;
                     initDashboard();
                 }
-            } catch (e) { alert(e.message); }
+            } catch (e) { 
+                alert(e.message); 
+                msg.innerText = "> RALAT AKSES";
+                console.error(e);
+            }
         }
 
         function initDashboard() {
             document.getElementById('auth-container').classList.add('hidden');
             document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-            document.getElementById('balance-amt').innerText = currentUser.balance.toFixed(2);
-            document.getElementById('user-rank').innerText = currentUser.rank;
             
-            const rank = currentUser.rank || 'MEMBER';
+            // Set Data
+            document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
+            document.getElementById('balance-amt').innerText = parseFloat(currentUser.balance).toFixed(2);
+            document.getElementById('user-rank').innerText = (currentUser.rank || 'MEMBER').toUpperCase();
+            
+            const rank = (currentUser.rank || 'MEMBER').toUpperCase();
             const plans = PRICING[rank] || PRICING.MEMBER;
             document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
             
-            if (rank === 'OWNER' || rank === 'RESELLER') document.getElementById('tab-transfer').classList.remove('hidden');
+            if (rank === 'OWNER' || rank === 'RESELLER') {
+                document.getElementById('tab-transfer').classList.remove('hidden');
+            }
             
             document.getElementById('reseller-list').innerHTML = RESELLERS.map(r => `
-                <div class="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-purple-500/20">
-                    <span class="text-[10px] font-bold text-white">${r.name} RESELLER</span>
-                    <a href="https://wa.me/${r.phone}" target="_blank" class="text-[9px] bg-green-600 text-white px-2 py-1 rounded">WHATSAPP</a>
+                <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-purple-500/20">
+                    <span class="text-[11px] font-bold text-white">${r.name} RESELLER</span>
+                    <a href="https://wa.me/${r.phone}" target="_blank" class="text-[9px] bg-green-600 text-white px-3 py-1.5 rounded-lg font-bold">WHATSAPP</a>
                 </div>
             `).join('');
         }
@@ -198,15 +203,12 @@
             btn.disabled = true;
 
             try {
-                // Sini kita guna mode cors dan paksa https
                 const res = await fetch(`${FF_NICKNAME_API}?uid=${uid}`, { mode: 'cors' });
                 const data = await res.json();
-                
-                // Mapping ikut format API ffbd.store
                 const info = Array.isArray(data) ? data[0] : data;
                 const extra = Array.isArray(data) && data[1] ? data[1] : info;
 
-                if (!info.nickname) throw new Error();
+                if (!info || !info.nickname) throw new Error("Tak dijumpai");
 
                 document.getElementById('pi-nickname').innerText = info.nickname;
                 document.getElementById('pi-region').innerText = info.region || "N/A";
@@ -214,7 +216,7 @@
                 document.getElementById('pi-likes').innerText = extra.likes || "N/A";
                 document.getElementById('player-info').classList.remove('hidden');
             } catch (e) {
-                alert("ID Tak Sah / API Offline");
+                alert("ID Tak Sah atau API Error");
             } finally {
                 btn.innerText = "CHECK ID";
                 btn.disabled = false;
@@ -225,10 +227,10 @@
             const uid = document.getElementById('target-uid').value.trim();
             const price = parseFloat(document.getElementById('package-select').value);
             const status = document.getElementById('status-msg');
-            if (!uid) return alert("UID?");
+            if (!uid) return alert("Masukkan UID!");
 
             try {
-                const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
+                const { data: user, error } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                 if (user.balance < price) throw new Error("Kredit kurang!");
 
                 status.innerText = "> INJECTING...";
@@ -240,28 +242,29 @@
                 const newBal = user.balance - price;
                 await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
                 document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                status.innerText = "> SUCCESS!";
-            } catch (e) { status.innerText = "> ERROR: " + e.message; }
+                status.innerText = "> BERJAYA!";
+            } catch (e) { status.innerText = "> GAGAL: " + e.message; }
         }
 
         async function executeTransfer() {
             const target = document.getElementById('tf-username').value.trim().toLowerCase();
             const amt = parseFloat(document.getElementById('tf-amount').value);
-            if (!target || isNaN(amt)) return;
+            if (!target || isNaN(amt)) return alert("Isi Username & Amaun!");
             try {
                 const { data: rec } = await _supabase.from('database panel').select('balance').eq('username', target).single();
-                if (!rec) throw new Error("Tak wujud!");
+                if (!rec) throw new Error("User tidak wujud!");
                 await _supabase.from('database panel').update({ balance: rec.balance + amt }).eq('username', target);
-                alert("Siap!");
-            } catch (e) { alert(e.message); }
+                alert(`Berjaya pindah $${amt} ke ${target}`);
+            } catch (e) { alert("Gagal: " + e.message); }
         }
 
         function showQR() {
-            document.getElementById('qr-amount-txt').innerText = `RM ${document.getElementById('topup-select').value}`;
             document.getElementById('qr-modal').classList.remove('hidden');
         }
 
-        function sendWA() { window.open(`https://wa.me/601165406482?text=TOPUP%20USER:${currentUser.username.toUpperCase()}`, '_blank'); }
+        function sendWA() { 
+            window.open(`https://wa.me/601165406482?text=SAYA%20DAH%20TOPUP%20USER%20${currentUser.username.toUpperCase()}`, '_blank'); 
+        }
     </script>
 </body>
-</html>
+</html></html>
