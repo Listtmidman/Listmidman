@@ -86,9 +86,6 @@
                 <div class="player-row"><span class="text-[10px] text-gray-400">Region</span><span id="pi-region" class="text-[10px] text-blue-300 font-bold">-</span></div>
                 <div class="player-row"><span class="text-[10px] text-gray-400">Level</span><span id="pi-level" class="text-[10px] text-yellow-300 font-bold">-</span></div>
                 <div class="player-row"><span class="text-[10px] text-gray-400">Likes</span><span id="pi-likes" class="text-[10px] text-pink-400 font-bold">-</span></div>
-                <div class="player-row"><span class="text-[10px] text-gray-400">EXP</span><span id="pi-exp" class="text-[10px] text-purple-300 font-bold">-</span></div>
-                <div class="player-row"><span class="text-[10px] text-gray-400">Honor Score</span><span id="pi-honor" class="text-[10px] text-green-400 font-bold">-</span></div>
-                <div class="player-row"><span class="text-[10px] text-gray-400">Joined</span><span id="pi-created" class="text-[10px] text-gray-300">-</span></div>
             </div>
             <label class="text-[10px] text-gray-500 uppercase ml-1">Pilih Pakej Likes:</label>
             <select id="package-select" class="input-field"></select>
@@ -143,11 +140,10 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // LINK TELAH DIGANTIKAN KE RENDER
-        const PROXY = "https://beast-api-v1.onrender.com";
-        const FF_LIKES_API = PROXY + "/api/ff/likes";
-        const FF_NICKNAME_API = PROXY + "/api/ff/nickname";
-        const PHDR = { headers: { "x-panel-token": "BSTpnl-9x2k-FF26" } };
+        // CONFIG API SEBENAR
+        const API_KEY = "T526C4";
+        const FF_LIKES_API = "https://api.ffbd.store/xM/L";
+        const FF_NICKNAME_API = "https://api.ffbd.store/nickname"; 
 
         let currentUser = null;
 
@@ -163,24 +159,21 @@
                 { val: 4.00, qty: 500, label: "500 LIKES - $4.00" },
                 { val: 7.50, qty: 1000, label: "1,000 LIKES - $7.50" },
                 { val: 35.00, qty: 5000, label: "5,000 LIKES - $35.00" },
-                { val: 60.00, qty: 10000, label: "10,000 LIKES - $60.00" },
-                { val: 90.00, qty: 30000, label: "30,000 LIKES - $90.00" }
+                { val: 60.00, qty: 10000, label: "10,000 LIKES - $60.00" }
             ],
             RESELLER: [
                 { val: 0.50, qty: 100, label: "100 LIKES - $0.50" },
                 { val: 2.50, qty: 500, label: "500 LIKES - $2.50" },
                 { val: 4.50, qty: 1000, label: "1,000 LIKES - $4.50" },
                 { val: 15.00, qty: 5000, label: "5,000 LIKES - $15.00" },
-                { val: 25.00, qty: 10000, label: "10,000 LIKES - $25.00" },
-                { val: 45.00, qty: 30000, label: "30,000 LIKES - $45.00" }
+                { val: 25.00, qty: 10000, label: "10,000 LIKES - $25.00" }
             ],
             OWNER: [
                 { val: 0.10, qty: 100, label: "100 LIKES - $0.10" },
                 { val: 0.40, qty: 500, label: "500 LIKES - $0.40" },
                 { val: 0.80, qty: 1000, label: "1,000 LIKES - $0.80" },
                 { val: 3.50, qty: 5000, label: "5,000 LIKES - $3.50" },
-                { val: 6.50, qty: 10000, label: "10,000 LIKES - $6.50" },
-                { val: 18.00, qty: 30000, label: "30,000 LIKES - $18.00" }
+                { val: 6.50, qty: 10000, label: "10,000 LIKES - $6.50" }
             ]
         };
 
@@ -240,36 +233,45 @@
             if (!uid) return;
             btn.disabled = true;
             try {
-                const res = await fetch(`${FF_NICKNAME_API}?uid=${uid}`, PHDR);
+                const res = await fetch(`${FF_NICKNAME_API}?uid=${uid}`);
                 const data = await res.json();
-                document.getElementById('pi-nickname').innerText = data[0].nickname;
-                document.getElementById('pi-region').innerText = data[0].region;
-                document.getElementById('pi-level').innerText = data[1].level;
-                document.getElementById('pi-likes').innerText = data[1].likes;
-                document.getElementById('pi-exp').innerText = data[1].exp;
-                document.getElementById('pi-honor').innerText = data[1].honor_score;
-                document.getElementById('pi-created').innerText = data[1].account_created;
+                
+                // Mapping data dari API ffbd.store
+                document.getElementById('pi-nickname').innerText = data.nickname || "N/A";
+                document.getElementById('pi-region').innerText = data.region || "N/A";
+                document.getElementById('pi-level').innerText = data.level || "N/A";
+                document.getElementById('pi-likes').innerText = data.likes || "N/A";
+                
                 document.getElementById('player-info').classList.remove('hidden');
-            } catch (e) { alert("ID tidak sah!"); } finally { btn.disabled = false; }
+            } catch (e) { 
+                alert("ID tidak sah atau API Offline!"); 
+            } finally { btn.disabled = false; }
         }
 
         async function executeOrder() {
             const uid = document.getElementById('target-uid').value.trim();
             const price = parseFloat(document.getElementById('package-select').value);
             const status = document.getElementById('status-msg');
-            if (!uid) return;
+            if (!uid) { alert("Masukkan UID!"); return; }
+            
             try {
                 const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
                 if (user.balance < price) throw new Error("Kredit kurang!");
+                
                 status.innerText = "> SEDANG PROSES...";
-                const res = await fetch(`${FF_LIKES_API}?uid=${uid}`, PHDR);
+                const res = await fetch(`${FF_LIKES_API}?key=${API_KEY}&uid=${uid}`);
                 const data = await res.json();
-                if (data.status != 1) throw new Error("API Offline");
+                
+                // Ubah ikut respon API ffbd.store (biasanya dorang guna status: "success" atau status: 1)
+                if (data.status != "success" && data.status != 1) throw new Error(data.message || "API Error");
+                
                 const finalBal = user.balance - price;
                 await _supabase.from('database panel').update({ balance: finalBal }).eq('username', currentUser.username);
                 updateBalanceUI(finalBal);
-                status.innerText = "> BERJAYA!";
-            } catch (e) { status.innerText = "> GAGAL: " + e.message; }
+                status.innerText = "> BERJAYA DIHANTAR!";
+            } catch (e) { 
+                status.innerText = "> GAGAL: " + e.message; 
+            }
         }
 
         async function executeTransfer() {
@@ -278,9 +280,10 @@
             if (!target || isNaN(amount)) return;
             try {
                 const { data: rec } = await _supabase.from('database panel').select('balance').eq('username', target).single();
+                if(!rec) throw new Error("User tak wujud!");
                 await _supabase.from('database panel').update({ balance: rec.balance + amount }).eq('username', target);
-                alert("Berjaya!");
-            } catch (e) { alert("Gagal!"); }
+                alert("Berjaya kreditkan $" + amount + " ke " + target);
+            } catch (e) { alert("Gagal: " + e.message); }
         }
 
         function updateBalanceUI(amt) { document.getElementById('balance-amt').innerText = parseFloat(amt).toFixed(2); }
