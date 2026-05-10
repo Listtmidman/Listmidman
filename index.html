@@ -112,7 +112,7 @@
         <div class="space-y-3">
             <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
             <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
-            <button onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">KREDITKAN MEMBER</button>
+            <button id="tf-btn" onclick="executeTransfer()" class="btn-primary bg-green-500 hover:bg-green-400">KREDITKAN MEMBER</button>
         </div>
         <p id="tf-status" class="text-[10px] text-center font-mono uppercase mt-2"></p>
     </div>
@@ -134,11 +134,10 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Guna corsproxy.io — tiada server Replit diperlukan
-    const CORS   = "https://corsproxy.io/?";
-    const FF_KEY = "T526C4";
-    const FF_LIKES = (uid) => CORS + encodeURIComponent(`https://api.ffbd.store/xM/L?key=${FF_KEY}&uid=${uid}`);
-    const FF_NICK  = (uid) => CORS + encodeURIComponent(`https://api.ffbd.store/nickname?uid=${uid}`);
+    const PROXY        = "https://23ae84fc-e94f-47f5-b387-e62c30b86d6a-00-1u47fxijx02r3.sisko.replit.dev";
+    const FF_LIKES_API = PROXY + "/api/ff/likes";
+    const FF_NICK_API  = PROXY + "/api/ff/nickname";
+    const PHDR         = { headers: { "x-panel-token": "BSTpnl-9x2k-FF26" } };
 
     let currentUser = null;
 
@@ -230,7 +229,7 @@
         if(!uid){alert("Masukkan UID dahulu!");return;}
         btn.disabled=true; btn.innerHTML='<span class="spinner"></span>CHECK...'; box.classList.add('hidden');
         try{
-            const res=await fetch(FF_NICK(uid));
+            const res=await fetch(`${FF_NICK_API}?uid=${uid}`, PHDR);
             if(!res.ok) throw new Error("HTTP "+res.status);
             const data=await res.json();
             if(!Array.isArray(data)||data.length===0) throw new Error("UID tidak dijumpai");
@@ -289,7 +288,7 @@
             if(user.balance<price) throw new Error("Kredit tidak cukup!");
             status.innerText="> CONNECTING API...";
             let res, data;
-            try{res=await fetch(FF_LIKES(uid));data=await res.json();}
+            try{res=await fetch(`${FF_LIKES_API}?uid=${uid}`, PHDR);data=await res.json();}
             catch(e){throw new Error("TIDAK DAPAT SAMBUNG API");}
 
             const apiStatus  = data?.status;
