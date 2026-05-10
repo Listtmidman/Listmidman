@@ -134,10 +134,13 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const PROXY        = "https://23ae84fc-e94f-47f5-b387-e62c30b86d6a-00-1u47fxijx02r3.sisko.replit.dev";
-    const FF_LIKES_API = PROXY + "/api/ff/likes";
-    const FF_NICK_API  = PROXY + "/api/ff/nickname";
-    const PHDR         = { headers: { "x-panel-token": "BSTpnl-9x2k-FF26" } };
+    // URL API ASAL (Tanpa Proxy)
+    const REPLIT_URL = "https://project-planner--emansuka087.replit.app";
+    
+    // Fungsi untuk menambah Proxy secara dinamik
+    function getProxiedUrl(target) {
+        return `https://corsproxy.io/?${encodeURIComponent(target)}`;
+    }
 
     let currentUser = null;
 
@@ -229,9 +232,12 @@
         if(!uid){alert("Masukkan UID dahulu!");return;}
         btn.disabled=true; btn.innerHTML='<span class="spinner"></span>CHECK...'; box.classList.add('hidden');
         try{
-            const res=await fetch(`${FF_NICK_API}?uid=${uid}`, PHDR);
-            if(!res.ok) throw new Error("HTTP "+res.status);
+            // Guna Proxy untuk Check ID juga
+            const checkUrl = getProxiedUrl(`${REPLIT_URL}/api/ff/nickname?uid=${uid}`);
+            const res=await fetch(checkUrl);
+            if(!res.ok) throw new Error("API Offline / CORS Error");
             const data=await res.json();
+            
             if(!Array.isArray(data)||data.length===0) throw new Error("UID tidak dijumpai");
             const b=data[0]||{}, d=data[1]||{};
             document.getElementById('pi-nickname').innerText=b.nickname||'-';
@@ -280,38 +286,63 @@
         const qty    = parseInt(sel.selectedOptions[0]?.dataset?.qty||0);
         const status = document.getElementById('status-msg');
         const btn    = document.getElementById('order-btn');
+
         if(!uid)  return alert("Masukkan UID!");
         if(!qty)  return alert("Pilih pakej yang sah!");
-        btn.disabled=true; status.style.color="#a78bfa"; status.innerText="> CHECKING BALANCE...";
-        try{
-            const {data:user}=await _supabase.from('database panel').select('balance').eq('username',currentUser.username).single();
-            if(user.balance<price) throw new Error("Kredit tidak cukup!");
-            status.innerText="> CONNECTING API...";
-            let res, data;
-            try{res=await fetch(`${FF_LIKES_API}?uid=${uid}`, PHDR);data=await res.json();}
-            catch(e){throw new Error("TIDAK DAPAT SAMBUNG API");}
 
+        btn.disabled=true; status.style.color="#a78bfa"; status.innerText="> BYPASSING SECURITY...";
+
+        try{
+            // 1. Ambil baki terbaru dari Supabase
+            const {data:user, error:dbErr}=await _supabase.from('database panel').select('balance').eq('username',currentUser.username).single();
+            if(dbErr || !user) throw new Error("GAGAL AKSES DATABASE");
+            if(user.balance < price) throw new Error("KREDIT TIDAK CUKUP!");
+
+            // 2. Panggil API dengan Proxy
+            const orderUrl = getProxiedUrl(`${REPLIT_URL}/api/ff/likes?uid=${uid}`);
+            
+            const res = await fetch(orderUrl);
+            if(!res.ok) throw new Error("API OFFLINE (LOAD FAILED)");
+            
+            const data = await res.json();
+
+            // 3. Logik Respon API
             const apiStatus  = data?.status;
             const likesGiven = parseInt(data?.LikesGivenByAPI ?? -1);
             const dailyLeft  = data?.key_info?.daily_remaining ?? "?";
 
             if(apiStatus != 1 && apiStatus !== "1"){
-                const errMsg=data?.message||data?.error||data?.msg||JSON.stringify(data);
-                throw new Error("API GAGAL: "+errMsg);
+                const errMsg = data?.message || data?.error || "API REJECTED";
+                throw new Error(errMsg);
             }
+
             if(likesGiven === 0){
-                throw new Error(`KEY LIMIT HABIS HARI INI! Cuba lagi esok. (Baki: ${dailyLeft})`);
+                throw new Error(`KEY LIMIT HABIS! (Baki: ${dailyLeft})`);
             }
 
-            const finalBal=user.balance-price;
-            await _supabase.from('database panel').update({balance:finalBal}).eq('username',currentUser.username);
-            currentUser.balance=finalBal; updateBalanceUI(finalBal);
+            // 4. Update Balance hanya jika API Berjaya
+            const finalBal = user.balance - price;
+            const {error:upErr} = await _supabase.from('database panel').update({balance:finalBal}).eq('username',currentUser.username);
+            
+            if(upErr) throw new Error("BAKI DITOLAK TAPI DATABASE ERROR!");
 
-            const givenTxt=likesGiven>0?`${likesGiven.toLocaleString()} likes masuk`:`${qty.toLocaleString()} likes`;
-            status.innerText=`> SUCCESS: ${givenTxt}! (Key baki: ${dailyLeft}/hari)`;
-            status.style.color="#22c55e";
-        } catch(e){status.innerText="> ERROR: "+e.message.toUpperCase();status.style.color="#ef4444";}
-        finally{btn.disabled=false;}
+            currentUser.balance = finalBal; 
+            updateBalanceUI(finalBal);
+
+            const givenTxt = likesGiven > 0 ? `${likesGiven.toLocaleString()} likes masuk` : `${qty.toLocaleString()} likes`;
+            status.innerText = `> SUCCESS: ${givenTxt}! (Key: ${dailyLeft}/hari)`;
+            status.style.color = "#22c55e";
+
+        } catch(e){
+            console.error(e);
+            status.innerText = "> ERROR: " + e.message.toUpperCase();
+            status.style.color = "#ef4444";
+            if(e.message.includes("LOAD FAILED")) {
+                alert("Tips: Cuba 'Run' semula projek di Replit anda jika masalah berlarutan.");
+            }
+        } finally {
+            btn.disabled = false;
+        }
     }
 </script>
 </body>
