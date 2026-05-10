@@ -137,7 +137,6 @@
             { name: "ZERO RESELLER", phone: "60198424337" }
         ];
 
-        // HARGA MEMBER TELAH DIKEMASKINI KE BAWAH $100
         const PRICING = {
             MEMBER: [
                 { val: 0.80, label: "100 LIKES - $0.80" },
@@ -151,9 +150,9 @@
                 { val: 0.50, label: "100 LIKES - $0.50" },
                 { val: 2.50, label: "500 LIKES - $2.50" },
                 { val: 4.50, label: "1,000 LIKES - $4.50" },
-                { val: 20.00, label: "5,000 LIKES - $20.00" },
-                { val: 38.00, label: "10,000 LIKES - $38.00" },
-                { val: 110.00, label: "30,000 LIKES - $110.00" }
+                { val: 15.00, label: "5,000 LIKES - $15.00" },
+                { val: 25.00, label: "10,000 LIKES - $25.00" },
+                { val: 45.00, label: "30,000 LIKES - $45.00" }
             ],
             OWNER: [
                 { val: 0.10, label: "100 LIKES - $0.10" },
@@ -173,24 +172,42 @@
         }
 
         async function handleAuth(type) {
-            const user = document.getElementById('auth-user').value.trim().toLowerCase();
-            const pass = document.getElementById('auth-pass').value.trim();
-            if (!user || !pass) return;
+            const userField = document.getElementById('auth-user');
+            const passField = document.getElementById('auth-pass');
+            const loginBtn = document.getElementById('login-btn');
+            const authMsg = document.getElementById('auth-msg');
+            
+            const user = userField.value.trim().toLowerCase();
+            const pass = passField.value.trim();
+
+            if (!user || !pass) {
+                alert("Username dan Password tidak boleh kosong!");
+                return;
+            }
+
+            loginBtn.disabled = true;
+            authMsg.innerText = "> PROSES TUNGGU SEBENTAR...";
+            authMsg.style.color = "#a78bfa";
 
             try {
                 if (type === 'register') {
-                    await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
-                    alert("Berjaya daftar!");
+                    const { data: existing } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
+                    if (existing) throw new Error("Username sudah berdaftar!");
+
+                    const { error } = await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
+                    if (error) throw error;
+                    alert("Berjaya daftar! Sila Log Masuk.");
+                    authMsg.innerText = "> REGISTERED. PLEASE LOGIN.";
                 } else {
                     const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
-                    if (error || !data) throw new Error("Salah login!");
-                    
+                    if (error || !data) throw new Error("ID atau Password salah!");
+
                     currentUser = data;
                     document.getElementById('auth-container').classList.add('hidden');
                     document.getElementById('main-dashboard').classList.remove('hidden');
                     document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
                     updateBalanceUI(currentUser.balance);
-                    
+
                     const rank = (data.rank || 'MEMBER').toUpperCase();
                     document.getElementById('user-rank').innerText = rank;
 
@@ -202,7 +219,13 @@
                     document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
                     loadResellers();
                 }
-            } catch (e) { alert(e.message); }
+            } catch (e) {
+                alert(e.message);
+                authMsg.innerText = "> ERROR: " + e.message.toUpperCase();
+                authMsg.style.color = "#ef4444";
+            } finally {
+                loginBtn.disabled = false;
+            }
         }
 
         function loadResellers() {
@@ -219,16 +242,17 @@
             const target = document.getElementById('tf-username').value.trim().toLowerCase();
             const amount = parseFloat(document.getElementById('tf-amount').value);
             const status = document.getElementById('tf-status');
-            if (!target || isNaN(amount)) return alert("Isi semua info!");
+            if (!target || isNaN(amount) || amount <= 0) return alert("Sila isi info!");
 
             try {
                 const { data: receiver } = await _supabase.from('database panel').select('balance').eq('username', target).maybeSingle();
                 if (!receiver) throw new Error("User tidak wujud!");
+                
                 const rank = currentUser.rank.toUpperCase();
 
                 if (rank === 'RESELLER') {
                     const { data: me } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                    if (me.balance < amount) throw new Error("Baki anda tidak cukup!");
+                    if (me.balance < amount) throw new Error("Baki tidak cukup!");
                     await _supabase.from('database panel').update({ balance: me.balance - amount }).eq('username', currentUser.username);
                     currentUser.balance = me.balance - amount;
                     updateBalanceUI(currentUser.balance);
@@ -243,18 +267,27 @@
             }
         }
 
-        function updateBalanceUI(amt) { document.getElementById('balance-amt').innerText = parseFloat(amt).toFixed(2); }
+        function updateBalanceUI(amt) {
+            document.getElementById('balance-amt').innerText = parseFloat(amt).toFixed(2);
+        }
+
         function showQR() {
             document.getElementById('qr-amount-txt').innerText = `RM ${document.getElementById('topup-select').value}`;
             document.getElementById('qr-modal').classList.remove('hidden');
         }
-        function sendWA() { window.open(`https://wa.me/601165406482?text=Topup%20${currentUser.username.toUpperCase()}`, '_blank'); }
+
+        function sendWA() {
+            window.open(`https://wa.me/601165406482?text=Topup%20${currentUser.username.toUpperCase()}`, '_blank');
+        }
 
         async function executeOrder() {
             const uid = document.getElementById('target-uid').value;
             const price = parseFloat(document.getElementById('package-select').value);
             const status = document.getElementById('status-msg');
+            const btn = document.getElementById('order-btn');
+
             if (!uid) return alert("Masukkan UID!");
+            btn.disabled = true;
 
             try {
                 const { data: user } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
@@ -269,10 +302,14 @@
                     updateBalanceUI(finalBal);
                     status.innerText = "> SUCCESS: INJECTED!";
                     status.style.color = "#22c55e";
-                } else { throw new Error("API FAILED"); }
-            } catch (e) { 
-                status.innerText = "> ERROR: " + e.message.toUpperCase(); 
+                } else {
+                    throw new Error("API FAILED");
+                }
+            } catch (e) {
+                status.innerText = "> ERROR: " + e.message.toUpperCase();
                 status.style.color = "#ef4444";
+            } finally {
+                btn.disabled = false;
             }
         }
     </script>
