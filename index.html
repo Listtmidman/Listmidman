@@ -8,48 +8,68 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Courier New', monospace; }
-        .glass { background: rgba(19, 16, 31, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(167, 139, 250, 0.2); border-radius: 24px; }
-        .neon-border { box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
-        .input-field { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; width: 100%; transition: 0.3s; font-family: 'Courier New', monospace; box-sizing: border-box; }
-        .input-field:focus { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167, 139, 250, 0.2); }
-        .btn-primary { background: #a78bfa; color: black; font-weight: bold; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; border: none; display: block; text-align: center; transition: 0.2s; font-family: 'Courier New', monospace; font-size: 14px; }
-        .btn-primary:hover:not(:disabled) { background: #c4b5fd; transform: scale(1.02); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-        .hidden { display: none !important; }
-        .rank-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
-        .notif-box { background: rgba(167, 139, 250, 0.1); border-left: 4px solid #a78bfa; padding: 12px; border-radius: 8px; margin-bottom: 15px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } 50% { box-shadow: 0 0 10px rgba(167, 139, 250, 0.4); } 100% { box-shadow: 0 0 0px rgba(167, 139, 250, 0.2); } }
-        .modal-custom { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-        .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 10px; font-weight: bold; color: #666; border-bottom: 2px solid transparent; cursor: pointer; }
-        .tab-btn.active { color: #a78bfa; border-bottom: 2px solid #a78bfa; }
-        .player-card { background: rgba(0,0,0,0.6); border: 1px solid rgba(167,139,250,0.3); border-radius: 16px; padding: 14px; margin-top: 8px; }
-        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .player-row:last-child { border-bottom: none; }
-        .check-btn { background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: bold; padding: 8px 14px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); font-size: 10px; letter-spacing: 1px; transition: 0.2s; white-space: nowrap; font-family: 'Courier New', monospace; }
-        .check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        body { background-color:#0a0a0a; color:#e0e0e0; font-family:'Courier New',monospace; }
+        .glass { background:rgba(19,16,31,0.8); backdrop-filter:blur(12px); border:1px solid rgba(167,139,250,0.2); border-radius:24px; }
+        .neon { box-shadow:0 0 15px rgba(167,139,250,0.3); }
+        .input-field { background:#000; border:1px solid #333; color:white; padding:12px; border-radius:12px; outline:none; width:100%; transition:0.3s; font-family:'Courier New',monospace; box-sizing:border-box; }
+        .input-field:focus { border-color:#a78bfa; box-shadow:0 0 10px rgba(167,139,250,0.2); }
+        .btn-main { background:#a78bfa; color:black; font-weight:bold; padding:12px; border-radius:12px; cursor:pointer; width:100%; border:none; text-align:center; transition:0.2s; font-family:'Courier New',monospace; font-size:14px; display:block; }
+        .btn-main:hover:not(:disabled) { background:#c4b5fd; transform:scale(1.02); }
+        .btn-main:disabled { opacity:0.5; cursor:not-allowed; }
+        .hidden { display:none !important; }
+        .rank-badge { font-size:9px; padding:2px 8px; border-radius:99px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; display:inline-block; }
+        .notif-box { background:rgba(167,139,250,0.1); border-left:4px solid #a78bfa; padding:12px; border-radius:8px; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%{box-shadow:0 0 0px rgba(167,139,250,0.2)}50%{box-shadow:0 0 10px rgba(167,139,250,0.4)}100%{box-shadow:0 0 0px rgba(167,139,250,0.2)} }
+        .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+        .tab-btn { flex:1; padding:10px; text-align:center; font-size:10px; font-weight:bold; color:#666; border-bottom:2px solid transparent; cursor:pointer; transition:0.2s; }
+        .tab-btn.active { color:#a78bfa; border-bottom:2px solid #a78bfa; }
+        .sub-btn { flex:1; padding:6px 4px; text-align:center; font-size:9px; font-weight:bold; cursor:pointer; border-radius:8px; letter-spacing:0.5px; color:#666; transition:0.2s; }
+        .sub-btn.active { background:rgba(167,139,250,0.2); color:#a78bfa; }
+        .player-card { background:rgba(0,0,0,0.6); border:1px solid rgba(167,139,250,0.3); border-radius:16px; padding:14px; }
+        .player-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+        .player-row:last-child { border-bottom:none; }
+        .check-btn { background:rgba(59,130,246,0.2); color:#60a5fa; font-weight:bold; padding:8px 14px; border-radius:10px; cursor:pointer; border:1px solid rgba(59,130,246,0.4); font-size:10px; letter-spacing:1px; white-space:nowrap; font-family:'Courier New',monospace; }
+        .check-btn:disabled { opacity:0.5; cursor:not-allowed; }
+        .ptable { width:100%; border-collapse:collapse; font-size:10px; }
+        .ptable th { padding:6px 4px; font-size:9px; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid rgba(167,139,250,0.3); text-align:center; }
+        .ptable td { padding:5px 4px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .ptable tr:last-child td { border-bottom:none; }
+        .bar-bg { background:#1f1f2e; border-radius:99px; height:6px; overflow:hidden; margin:5px 0; }
+        .bar-fill { height:100%; border-radius:99px; transition:width 0.5s; }
+        .stat-box { flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:10px 12px; text-align:center; }
+        .owner-only { display:none; }
+        .action-btn { font-weight:bold; padding:10px; border-radius:12px; cursor:pointer; width:100%; border:none; font-family:'Courier New',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; transition:0.2s; }
+        .action-btn:hover:not(:disabled) { opacity:0.85; transform:scale(1.01); }
+        .action-btn:disabled { opacity:0.4; cursor:not-allowed; }
+        .user-info-card { background:rgba(0,0,0,0.5); border-radius:14px; padding:14px; border:1px solid rgba(255,255,255,0.08); }
+        .rank-select { background:#111; border:1px solid #444; color:white; padding:10px 12px; border-radius:10px; width:100%; font-family:'Courier New',monospace; font-size:12px; outline:none; cursor:pointer; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <div id="auth-container" class="w-full max-w-md glass p-8 neon-border">
-        <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
-        <div class="flex flex-col space-y-4">
-            <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
-            <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
-            <button id="login-btn" onclick="handleAuth('login')" class="btn-primary">LOGIN</button>
-            <button onclick="handleAuth('register')" class="text-[10px] text-gray-500 hover:text-purple-400 uppercase tracking-widest mt-2" style="background:none;border:none;cursor:pointer;">Register New Uplink</button>
-        </div>
-        <p id="auth-msg" class="text-[10px] mt-4 text-center text-gray-500 font-mono"></p>
+<!-- AUTH -->
+<div id="auth-container" class="w-full max-w-md glass p-8 neon">
+    <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
+    <div class="flex flex-col space-y-4">
+        <input id="auth-user" type="text" placeholder="USERNAME" class="input-field">
+        <input id="auth-pass" type="password" placeholder="PASSWORD" class="input-field">
+        <button onclick="handleAuth('login')" class="btn-main">LOGIN</button>
+        <button onclick="handleAuth('register')" style="background:none;border:none;cursor:pointer;color:#666;font-size:10px;letter-spacing:2px;text-transform:uppercase;">Register New Uplink</button>
+    </div>
+    <p id="auth-msg" class="text-[10px] mt-4 text-center text-gray-500 font-mono"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="w-full max-w-md space-y-4 hidden">
+
+    <div class="notif-box">
+        <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
+        <p class="text-[11px] text-white mt-1">🚀 Sila hubungi Reseller di tab TOPUP jika ada masalah kredit.</p>
     </div>
 
-    <div id="main-dashboard" class="w-full max-w-md space-y-4 hidden">
-        <div class="notif-box">
-            <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
-            <p class="text-[11px] text-white mt-1">🚀 Sila hubungi Reseller di tab TOPUP jika ada masalah kredit.</p>
-        </div>
-
-        <div class="glass p-6 flex justify-between items-center neon-border">
+    <!-- Profile card -->
+    <div class="glass p-6 neon">
+        <div class="flex justify-between items-center">
             <div>
                 <span id="user-rank" class="rank-badge bg-purple-900/50 text-purple-300">...</span>
                 <p class="text-[10px] text-purple-400 font-bold uppercase">Subject ID</p>
@@ -57,230 +77,588 @@
             </div>
             <div class="text-right">
                 <p class="text-[10px] text-green-400 font-bold uppercase">Available Credits</p>
-                <p class="text-2xl font-black text-green-400 tracking-tighter">$<span id="balance-amt">0.00</span></p>
+                <p class="text-2xl font-black text-green-400">$<span id="balance-amt">0.00</span></p>
             </div>
         </div>
 
-        <div class="flex border-b border-gray-800">
-            <div id="tab-terminal" class="tab-btn active" onclick="switchTab('terminal')">TERMINAL</div>
-            <div id="tab-topup" class="tab-btn" onclick="switchTab('topup')">TOPUP</div>
-            <div id="tab-transfer" class="tab-btn hidden" onclick="switchTab('transfer')">TRANSFER</div>
-        </div>
-
-        <div id="page-terminal" class="glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase italic">Injection Terminal</h4>
-            <div class="flex gap-2">
-                <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
-                <button id="check-btn" onclick="checkId()" class="check-btn">CHECK ID</button>
-            </div>
-            <div id="player-info" class="hidden player-card">
-                <div class="player-row"><span class="text-[10px] text-gray-400">Nickname</span><span id="pi-nickname" class="text-[10px] text-white font-bold">-</span></div>
-                <div class="player-row"><span class="text-[10px] text-gray-400">Region</span><span id="pi-region" class="text-[10px] text-blue-300 font-bold">-</span></div>
-                <div class="player-row"><span class="text-[10px] text-gray-400">Level</span><span id="pi-level" class="text-[10px] text-yellow-300 font-bold">-</span></div>
-                <div class="player-row"><span class="text-[10px] text-gray-400">Likes</span><span id="pi-likes" class="text-[10px] text-pink-400 font-bold">-</span></div>
-            </div>
-            <label class="text-[10px] text-gray-500 uppercase ml-1">Pilih Pakej Likes:</label>
-            <select id="package-select" class="input-field"></select>
-            <button id="order-btn" onclick="executeOrder()" class="btn-primary">EXECUTE ORDER</button>
-            <p id="status-msg" class="text-center text-[10px] font-mono">&gt; STANDBY...</p>
-        </div>
-
-        <div id="page-topup" class="hidden glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
-            <div id="reseller-list" class="space-y-2"></div>
-            <hr class="border-gray-800">
-            <button onclick="showQR()" class="btn-primary" style="background:#16a34a;">CONFIRM TOPUP (OWNER QR)</button>
-        </div>
-
-        <div id="page-transfer" class="hidden glass p-6 space-y-4">
-            <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Admin Transfer</h4>
-            <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field uppercase">
-            <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
-            <button onclick="executeTransfer()" class="btn-primary" style="background:#16a34a;">KREDITKAN MEMBER</button>
-        </div>
-
-        <button onclick="location.reload()" class="w-full text-[10px] text-gray-600 p-2 uppercase tracking-widest" style="background:none;border:none;cursor:pointer;">[-] Logout Session</button>
-    </div>
-
-    <div id="qr-modal" class="modal-custom hidden">
-        <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
-            <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl mb-4 border-2 border-white">
-            <button onclick="sendWA()" class="btn-primary" style="background:#7c3aed;">HANTAR RESIT</button>
-            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="text-xs text-gray-500 mt-4 block mx-auto" style="background:none;border:none;cursor:pointer;">TUTUP</button>
-        </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = "https://ugszmvmawidtoqjidmor.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        const API_KEY = "T526C4";
-        const CORS_PROXY = "https://corsproxy.io/?url=";
-        const FF_LIKES_API = "https://api.ffbd.store/xM/L";
-        const FF_NICKNAME_API = "https://api.ffbd.store/nickname";
-
-        let currentUser = null;
-
-        const PRICING = {
-            MEMBER:   [ { val: 0.80, label: "100 LIKES - $0.80" }, { val: 7.50, label: "1,000 LIKES - $7.50" } ],
-            RESELLER: [ { val: 0.50, label: "100 LIKES - $0.50" }, { val: 4.50, label: "1,000 LIKES - $4.50" } ],
-            OWNER:    [ { val: 0.10, label: "100 LIKES - $0.10" }, { val: 0.80, label: "1,000 LIKES - $0.80" } ]
-        };
-
-        const RESELLERS = [
-            { name: "LUQQSTORE", phone: "601127112378" },
-            { name: "ZERO",      phone: "60198424337"  },
-            { name: "MOR",       phone: "601112614932" }
-        ];
-
-        function switchTab(tab) {
-            ['page-terminal', 'page-topup', 'page-transfer'].forEach(p => document.getElementById(p).classList.add('hidden'));
-            document.getElementById('page-' + tab).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-        }
-
-        async function handleAuth(type) {
-            const user = document.getElementById('auth-user').value.trim().toLowerCase();
-            const pass = document.getElementById('auth-pass').value.trim();
-            const msg  = document.getElementById('auth-msg');
-            if (!user || !pass) return alert("Sila isi Username & Password!");
-            msg.innerText = "> MENGHUBUNGKAN...";
-            try {
-                if (type === 'register') {
-                    const { data: exists } = await _supabase.from('database panel').select('username').eq('username', user).maybeSingle();
-                    if (exists) throw new Error("Username sudah wujud!");
-                    const { error } = await _supabase.from('database panel').insert([{ username: user, password: pass, balance: 0, rank: 'MEMBER' }]);
-                    if (error) throw error;
-                    alert("Berjaya daftar! Sila Login.");
-                    msg.innerText = "";
-                } else {
-                    const { data, error } = await _supabase.from('database panel').select('*').eq('username', user).eq('password', pass).maybeSingle();
-                    if (error) throw error;
-                    if (!data) throw new Error("Username atau Password salah!");
-                    currentUser = data;
-                    initDashboard();
-                }
-            } catch (e) {
-                alert(e.message);
-                msg.innerText = "> RALAT AKSES";
-            }
-        }
-
-        function initDashboard() {
-            document.getElementById('auth-container').classList.add('hidden');
-            document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('display-name').innerText = currentUser.username.toUpperCase();
-            document.getElementById('balance-amt').innerText = parseFloat(currentUser.balance).toFixed(2);
-            document.getElementById('user-rank').innerText = (currentUser.rank || 'MEMBER').toUpperCase();
-
-            const rank  = (currentUser.rank || 'MEMBER').toUpperCase();
-            const plans = PRICING[rank] || PRICING.MEMBER;
-            document.getElementById('package-select').innerHTML = plans.map(p => `<option value="${p.val}">${p.label}</option>`).join('');
-
-            if (rank === 'OWNER' || rank === 'RESELLER') {
-                document.getElementById('tab-transfer').classList.remove('hidden');
-            }
-
-            document.getElementById('reseller-list').innerHTML = RESELLERS.map(r => `
-                <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.4);padding:12px;border-radius:12px;border:1px solid rgba(167,139,250,0.2);">
-                    <span style="font-size:11px;font-weight:bold;color:white;">${r.name} RESELLER</span>
-                    <a href="https://wa.me/${r.phone}" target="_blank" style="font-size:9px;background:#16a34a;color:white;padding:6px 12px;border-radius:8px;font-weight:bold;text-decoration:none;">WHATSAPP</a>
+        <!-- OWNER STATS -->
+        <div id="owner-stats" class="owner-only" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(167,139,250,0.2);">
+            <p style="font-size:9px;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚙️ Owner Stats</p>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <div class="stat-box">
+                    <p style="font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Total Likes Masuk</p>
+                    <p id="total-likes-display" style="font-size:20px;font-weight:900;color:#f9a8d4;margin-top:2px;">0</p>
+                    <p style="font-size:7px;color:#4b5563;">kumulatif semua order</p>
                 </div>
-            `).join('');
+                <div class="stat-box">
+                    <p style="font-size:8px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Order Hari Ini</p>
+                    <p id="today-orders-display" style="font-size:20px;font-weight:900;color:#fbbf24;margin-top:2px;">0</p>
+                    <p style="font-size:7px;color:#4b5563;">jumlah execute hari ini</p>
+                </div>
+            </div>
+            <div id="limit-card" style="background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.15);border-radius:12px;padding:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:9px;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Limit API Harian (100/hari)</span>
+                    <span id="limit-label" style="font-size:9px;font-weight:bold;color:#4ade80;">—</span>
+                </div>
+                <div class="bar-bg"><div id="limit-bar" class="bar-fill" style="width:0%;background:#4ade80;"></div></div>
+                <div style="display:flex;justify-content:space-between;margin-top:3px;">
+                    <span id="limit-total-txt" style="font-size:8px;color:#555;">Semak limit dulu</span>
+                    <span id="limit-remain-txt" style="font-size:8px;color:#555;"></span>
+                </div>
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:8px;color:#4b5563;text-transform:uppercase;letter-spacing:1px;">API Key</span>
+                    <span id="api-key-display" style="font-size:9px;color:#4b5563;letter-spacing:2px;cursor:pointer;" onclick="toggleKey(this)">••••••</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-800">
+        <div id="tab-terminal" class="tab-btn active" onclick="switchTab('terminal')">TERMINAL</div>
+        <div id="tab-topup"    class="tab-btn"        onclick="switchTab('topup')">TOPUP</div>
+        <div id="tab-transfer" class="tab-btn hidden"  onclick="switchTab('transfer')">TRANSFER</div>
+        <div id="tab-manage"   class="tab-btn hidden"  onclick="switchTab('manage')">MANAGE</div>
+    </div>
+
+    <!-- TERMINAL -->
+    <div id="page-terminal" class="glass p-6 space-y-3">
+        <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase italic">Injection Terminal</h4>
+        <div class="flex gap-2">
+            <input id="target-uid" type="number" placeholder="TARGET UID" class="input-field">
+            <button id="check-btn" onclick="checkId()" class="check-btn">CHECK ID</button>
+        </div>
+        <div id="player-info" class="hidden player-card">
+            <div class="player-row"><span class="text-[10px] text-gray-400">Nickname</span><span id="pi-nickname" class="text-[10px] text-white font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Region</span>  <span id="pi-region"   class="text-[10px] text-blue-300 font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Level</span>   <span id="pi-level"    class="text-[10px] text-yellow-300 font-bold">-</span></div>
+            <div class="player-row"><span class="text-[10px] text-gray-400">Likes</span>   <span id="pi-likes"    class="text-[10px] text-pink-400 font-bold">-</span></div>
+            <div id="uid-daily-row" class="owner-only player-row" style="display:none !important;">
+                <span class="text-[10px] text-gray-400">Likes hari ini (UID)</span>
+                <span id="pi-uid-today" class="text-[10px] text-orange-400 font-bold">-</span>
+            </div>
+        </div>
+        <label class="text-[10px] text-gray-500 uppercase ml-1">Pilih Pakej Likes:</label>
+        <select id="package-select" class="input-field"></select>
+        <button id="order-btn" onclick="executeOrder()" class="btn-main">EXECUTE ORDER</button>
+        <button id="limit-btn" class="owner-only w-full text-[10px] py-2 px-4 rounded-xl" onclick="checkApiLimit()" style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);color:#a78bfa;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:1px;display:none;">
+            🔍 SEMAK LIMIT API
+        </button>
+        <p id="status-msg" class="text-center text-[10px] font-mono text-gray-400">&gt; STANDBY...</p>
+    </div>
+
+    <!-- TOPUP -->
+    <div id="page-topup" class="hidden glass p-6 space-y-3">
+        <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
+        <div class="flex gap-2 p-1 rounded-xl" style="background:rgba(0,0,0,0.4);">
+            <div id="sub-reseller" class="sub-btn active" onclick="switchSub('reseller')">RESELLER</div>
+            <div id="sub-rates"    class="sub-btn"        onclick="switchSub('rates')">TOPUP RM</div>
+            <div id="sub-prices"   class="sub-btn"        onclick="switchSub('prices')">HARGA LIKES</div>
+        </div>
+        <div id="sub-page-reseller">
+            <div id="reseller-list" class="space-y-2"></div>
+            <hr class="border-gray-800 my-3">
+            <button onclick="showQR()" class="btn-main" style="background:#16a34a;">CONFIRM TOPUP (OWNER QR)</button>
+        </div>
+        <div id="sub-page-rates" class="hidden">
+            <p class="text-[9px] text-gray-500 text-center uppercase tracking-widest mb-3">Kadar Topup Kredit</p>
+            <table class="ptable">
+                <thead><tr><th style="color:#a78bfa;">TOPUP (RM)</th><th style="color:#4ade80;">KREDIT ($)</th></tr></thead>
+                <tbody>
+                    <tr><td class="text-yellow-300 font-bold">RM 1</td>  <td class="text-green-400">$0.22</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 2</td>  <td class="text-green-400">$0.44</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 5</td>  <td class="text-green-400">$1.10</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 10</td> <td class="text-green-400">$2.20</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 15</td> <td class="text-green-400">$3.30</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 20</td> <td class="text-green-400">$4.40</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 30</td> <td class="text-green-400">$6.60</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 50</td> <td class="text-green-400">$11.00</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 80</td> <td class="text-green-400">$17.60</td></tr>
+                    <tr><td class="text-yellow-300 font-bold">RM 100</td><td class="text-green-400">$22.00</td></tr>
+                </tbody>
+            </table>
+            <p class="text-[8px] text-gray-600 text-center mt-3">$1 USD ≈ RM 4.50 | Hubungi reseller untuk topup</p>
+        </div>
+        <div id="sub-page-prices" class="hidden">
+            <p class="text-[9px] text-gray-500 text-center uppercase tracking-widest mb-3">Senarai Harga Likes</p>
+            <table class="ptable">
+                <thead><tr>
+                    <th style="color:#e0e0e0;">LIKES</th>
+                    <th style="color:#c4b5fd;">MEMBER</th>
+                    <th style="color:#fbbf24;">RESELLER</th>
+                    <th style="color:#4ade80;">OWNER</th>
+                </tr></thead>
+                <tbody id="likes-price-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TRANSFER -->
+    <div id="page-transfer" class="hidden glass p-6 space-y-3">
+        <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Admin Transfer</h4>
+        <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field" style="text-transform:uppercase;">
+        <input id="tf-amount" type="number" placeholder="AMOUNT ($)" class="input-field">
+        <button onclick="executeTransfer()" class="btn-main" style="background:#16a34a;">KREDITKAN MEMBER</button>
+    </div>
+
+    <!-- MANAGE (OWNER + RESELLER) -->
+    <div id="page-manage" class="hidden glass p-6 space-y-4">
+        <h4 class="text-center text-xs tracking-widest text-orange-300 uppercase">User Management</h4>
+
+        <!-- Search user -->
+        <div class="flex gap-2">
+            <input id="mg-username" type="text" placeholder="USERNAME SASARAN" class="input-field" style="text-transform:uppercase;">
+            <button onclick="lookupUser()" class="check-btn" id="mg-lookup-btn">CARI</button>
+        </div>
+
+        <!-- User info result -->
+        <div id="mg-user-card" class="hidden user-info-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div>
+                    <p style="font-size:11px;font-weight:900;color:white;" id="mg-uname">---</p>
+                    <p style="font-size:8px;color:#9ca3af;margin-top:2px;">Baki: $<span id="mg-ubal">0</span></p>
+                </div>
+                <span id="mg-urank-badge" style="font-size:9px;padding:3px 10px;border-radius:99px;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:rgba(88,28,135,0.4);color:#c4b5fd;">MEMBER</span>
+            </div>
+
+            <!-- OWNER: change rank -->
+            <div id="mg-rank-section" class="owner-only" style="display:none;">
+                <p style="font-size:9px;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Tukar Rank:</p>
+                <div style="display:flex;gap:8px;">
+                    <select id="mg-new-rank" class="rank-select">
+                        <option value="MEMBER">MEMBER</option>
+                        <option value="RESELLER">RESELLER</option>
+                        <option value="OWNER">OWNER</option>
+                    </select>
+                    <button onclick="changeRank()" class="action-btn" style="background:#a78bfa;color:black;width:auto;padding:10px 16px;white-space:nowrap;">SET RANK</button>
+                </div>
+            </div>
+
+            <!-- Ban / Unban buttons -->
+            <div style="display:flex;gap:8px;margin-top:10px;">
+                <button id="mg-ban-btn" onclick="banUser()" class="action-btn" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);">
+                    🚫 BAN AKAUN
+                </button>
+                <button id="mg-unban-btn" onclick="unbanUser()" class="action-btn" style="background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.4);">
+                    ✅ UNBAN
+                </button>
+            </div>
+
+            <p id="mg-status" style="text-align:center;font-size:10px;color:#9ca3af;margin-top:8px;font-family:monospace;"></p>
+        </div>
+
+        <p class="text-[9px] text-gray-600 text-center" id="mg-rules"></p>
+    </div>
+
+    <button onclick="location.reload()" style="background:none;border:none;cursor:pointer;color:#4b5563;font-size:10px;letter-spacing:2px;text-transform:uppercase;width:100%;padding:8px;">[-] Logout Session</button>
+</div>
+
+<!-- QR Modal -->
+<div id="qr-modal" class="modal-bg hidden">
+    <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
+        <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl mb-4 border-2 border-white">
+        <button onclick="sendWA()" class="btn-main" style="background:#7c3aed;">HANTAR RESIT</button>
+        <button onclick="document.getElementById('qr-modal').classList.add('hidden')" style="background:none;border:none;cursor:pointer;color:#6b7280;font-size:12px;margin-top:16px;display:block;margin-left:auto;margin-right:auto;">TUTUP</button>
+    </div>
+</div>
+
+<script>
+/* ── SUPABASE ── */
+const _sb = supabase.createClient(
+    "https://ugszmvmawidtoqjidmor.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"
+);
+
+/* ── API KEY (obfuscated) ── */
+const _kp = ["VDU","yNk","M0"].join("");
+function _ak(){ return atob(_kp); }
+
+const FF_NICKNAME_URL = "https://api.ffbd.store/nickname";
+const FF_LIKES_URL    = "https://api.ffbd.store/xM/L";
+
+const PACKAGES = [
+    {qty:100,   M:0.80,  R:0.50,  O:0.10 },
+    {qty:500,   M:3.50,  R:2.20,  O:0.45 },
+    {qty:1000,  M:7.00,  R:4.50,  O:0.80 },
+    {qty:2000,  M:13.00, R:8.00,  O:1.50 },
+    {qty:5000,  M:30.00, R:18.00, O:3.50 },
+    {qty:10000, M:55.00, R:33.00, O:6.00 },
+    {qty:20000, M:100.00,R:60.00, O:11.00},
+    {qty:30000, M:140.00,R:85.00, O:15.00},
+];
+const PRICE_KEY = {MEMBER:"M",RESELLER:"R",OWNER:"O"};
+
+const RESELLERS = [
+    {name:"LUQQSTORE",phone:"601127112378"},
+    {name:"ZERO",     phone:"60198424337" },
+    {name:"MOR",      phone:"601112614932"},
+];
+
+const RANK_ORDER = {MEMBER:0,RESELLER:1,OWNER:2,BANNED:-1};
+
+let currentUser = null;
+let currentRank = "MEMBER";
+let keyShown    = false;
+let mgTarget    = null; // looked-up user in manage tab
+
+/* ── TODAY helper ── */
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+/* ── localStorage helpers ── */
+function getLikes()       { return parseInt(localStorage.getItem("bp_total_likes")||"0"); }
+function addLikes(n)      { localStorage.setItem("bp_total_likes",getLikes()+n); refreshOwnerStats(); }
+function getTodayOrders() {
+    if(localStorage.getItem("bp_today_date")!==todayStr()){ localStorage.setItem("bp_today_date",todayStr()); localStorage.setItem("bp_today_orders","0"); }
+    return parseInt(localStorage.getItem("bp_today_orders")||"0");
+}
+function addTodayOrder()  { localStorage.setItem("bp_today_orders",getTodayOrders()+1); refreshOwnerStats(); }
+function getUidToday(uid) { return parseInt(localStorage.getItem(`bp_uid_${uid}_${todayStr()}`)||"0"); }
+function addUidLikes(uid,n){ localStorage.setItem(`bp_uid_${uid}_${todayStr()}`,getUidToday(uid)+n); }
+
+/* ── CORS-proof fetch ── */
+async function ffFetch(url){
+    const tries=[
+        async()=>{ const r=await fetch(url,{cache:"no-cache"}); if(!r.ok) throw 0; return r.json(); },
+        async()=>{ const r=await fetch("https://corsproxy.io/?url="+encodeURIComponent(url)); if(!r.ok) throw 0; const t=await r.text(); if(t[0]==="<") throw 0; return JSON.parse(t); },
+        async()=>{ const r=await fetch("https://api.allorigins.win/raw?url="+encodeURIComponent(url)); if(!r.ok) throw 0; const t=await r.text(); if(t[0]==="<") throw 0; return JSON.parse(t); },
+        async()=>{ const r=await fetch("https://api.allorigins.win/get?url="+encodeURIComponent(url)); if(!r.ok) throw 0; const j=await r.json(); if(!j.contents) throw 0; return JSON.parse(j.contents); },
+    ];
+    let last="Semua laluan gagal";
+    for(const fn of tries){ try{ return await fn(); }catch(e){ last=e?.message||"Error"; } }
+    throw new Error(last);
+}
+
+function isOk(r){
+    if(!r||typeof r!=="object") return false;
+    if(r.UID!==undefined||r.PlayerNickname!==undefined) return true;
+    if(r.status==="success"||r.status===1||r.status===2) return true;
+    if(r.success===true||r.success===1) return true;
+    return false;
+}
+
+/* ── Rank badge helper ── */
+function rankStyle(rank){
+    const styles={
+        OWNER:   {bg:"rgba(120,53,15,0.5)",  color:"#fbbf24"},
+        RESELLER:{bg:"rgba(20,83,45,0.5)",   color:"#4ade80"},
+        MEMBER:  {bg:"rgba(88,28,135,0.4)",  color:"#c4b5fd"},
+        BANNED:  {bg:"rgba(127,29,29,0.6)",  color:"#f87171"},
+    };
+    return styles[rank]||styles.MEMBER;
+}
+
+/* ── OWNER stats display ── */
+function refreshOwnerStats(){
+    if(currentRank!=="OWNER") return;
+    document.getElementById("total-likes-display").innerText=getLikes().toLocaleString();
+    document.getElementById("today-orders-display").innerText=getTodayOrders();
+}
+
+/* ── Limit bar ── */
+function updateLimitBar(ki){
+    if(!ki||currentRank!=="OWNER") return;
+    localStorage.setItem("bp_ki",JSON.stringify(ki));
+    const pct=Math.round(ki.daily_usage/ki.daily_limit*100);
+    const color=pct>=80?"#f87171":pct>=50?"#fbbf24":"#4ade80";
+    document.getElementById("limit-label").innerText=`${ki.daily_usage}/${ki.daily_limit} (${ki.daily_remaining} baki)`;
+    document.getElementById("limit-label").style.color=color;
+    document.getElementById("limit-bar").style.width=pct+"%";
+    document.getElementById("limit-bar").style.background=color;
+    document.getElementById("limit-total-txt").innerText=`Total API: ${ki.total_usage}/${ki.total_limit}`;
+    document.getElementById("limit-remain-txt").innerText=`Sisa: ${ki.total_remain}`;
+}
+
+function toggleKey(el){ keyShown=!keyShown; el.innerText=keyShown?_ak():"••••••"; el.style.color=keyShown?"#a78bfa":"#4b5563"; }
+
+/* ── Tab switching ── */
+function switchTab(t){
+    ["terminal","topup","transfer","manage"].forEach(x=>document.getElementById("page-"+x).classList.add("hidden"));
+    document.getElementById("page-"+t).classList.remove("hidden");
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.getElementById("tab-"+t).classList.add("active");
+}
+function switchSub(s){
+    ["reseller","rates","prices"].forEach(x=>{ document.getElementById("sub-page-"+x).classList.add("hidden"); document.getElementById("sub-"+x).classList.remove("active"); });
+    document.getElementById("sub-page-"+s).classList.remove("hidden");
+    document.getElementById("sub-"+s).classList.add("active");
+}
+
+/* ── AUTH ── */
+async function handleAuth(type){
+    const user=document.getElementById("auth-user").value.trim().toLowerCase();
+    const pass=document.getElementById("auth-pass").value.trim();
+    const msg =document.getElementById("auth-msg");
+    if(!user||!pass) return alert("Sila isi Username & Password!");
+    msg.innerText="> MENGHUBUNGKAN...";
+    try{
+        if(type==="register"){
+            const {data:ex}=await _sb.from("database panel").select("username").eq("username",user).maybeSingle();
+            if(ex) throw new Error("Username sudah wujud!");
+            const {error}=await _sb.from("database panel").insert([{username:user,password:pass,balance:0,rank:"MEMBER"}]);
+            if(error) throw error;
+            alert("Berjaya daftar! Sila Login."); msg.innerText="";
+        } else {
+            const {data,error}=await _sb.from("database panel").select("*").eq("username",user).eq("password",pass).maybeSingle();
+            if(error) throw error;
+            if(!data) throw new Error("Username atau Password salah!");
+            /* BAN CHECK */
+            if((data.rank||"").toUpperCase()==="BANNED") throw new Error("⛔ Akaun anda telah dibanned. Hubungi Owner.");
+            currentUser=data; initDashboard();
+        }
+    } catch(e){ alert(e.message); msg.innerText="> AKSES DITOLAK"; }
+}
+
+/* ── INIT DASHBOARD ── */
+function initDashboard(){
+    document.getElementById("auth-container").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    document.getElementById("display-name").innerText=currentUser.username.toUpperCase();
+    document.getElementById("balance-amt").innerText=parseFloat(currentUser.balance).toFixed(2);
+    currentRank=(currentUser.rank||"MEMBER").toUpperCase();
+
+    const badge=document.getElementById("user-rank");
+    badge.innerText=currentRank;
+    const s=rankStyle(currentRank);
+    badge.style.background=s.bg; badge.style.color=s.color;
+
+    const pk=PRICE_KEY[currentRank]||"M";
+    document.getElementById("package-select").innerHTML=PACKAGES.map(p=>
+        `<option value="${p[pk]}">${p.qty.toLocaleString()} LIKES — $${p[pk].toFixed(2)}</option>`
+    ).join("");
+
+    document.getElementById("likes-price-body").innerHTML=PACKAGES.map(p=>`
+        <tr>
+            <td class="font-bold text-white">${p.qty>=1000?p.qty/1000+"K":p.qty}</td>
+            <td class="text-purple-300">$${p.M.toFixed(2)}</td>
+            <td class="text-yellow-300">$${p.R.toFixed(2)}</td>
+            <td class="text-green-400">$${p.O.toFixed(2)}</td>
+        </tr>`).join("");
+
+    document.getElementById("reseller-list").innerHTML=RESELLERS.map(r=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.4);padding:12px;border-radius:12px;border:1px solid rgba(167,139,250,0.2);">
+            <span style="font-size:11px;font-weight:bold;color:white;">${r.name} RESELLER</span>
+            <a href="https://wa.me/${r.phone}" target="_blank" style="font-size:9px;background:#16a34a;color:white;padding:6px 12px;border-radius:8px;font-weight:bold;text-decoration:none;">WHATSAPP</a>
+        </div>`).join("");
+
+    if(currentRank==="OWNER"){
+        document.querySelectorAll(".owner-only").forEach(el=>{ el.style.display=el.tagName==="DIV"?"block":"flex"; });
+        document.getElementById("uid-daily-row").style.cssText="display:flex!important;";
+        const saved=localStorage.getItem("bp_ki");
+        if(saved) try{ updateLimitBar(JSON.parse(saved)); }catch(_){}
+        refreshOwnerStats();
+        document.getElementById("tab-transfer").classList.remove("hidden");
+        document.getElementById("tab-manage").classList.remove("hidden");
+        document.getElementById("mg-rules").innerText="OWNER: Boleh tukar rank & ban/unban mana-mana akaun.";
+    }
+    if(currentRank==="RESELLER"){
+        document.getElementById("tab-transfer").classList.remove("hidden");
+        document.getElementById("tab-manage").classList.remove("hidden");
+        document.getElementById("mg-rules").innerText="RESELLER: Hanya boleh lihat maklumat user. Tidak dibenarkan ban mana-mana akaun.";
+    }
+}
+
+/* ── CHECK ID ── */
+async function checkId(){
+    const uid=document.getElementById("target-uid").value.trim();
+    const btn=document.getElementById("check-btn");
+    if(!uid) return;
+    btn.innerText="..."; btn.disabled=true;
+    document.getElementById("player-info").classList.add("hidden");
+    try{
+        const data=await ffFetch(`${FF_NICKNAME_URL}?uid=${uid}`);
+        const info=Array.isArray(data)?data[0]:data;
+        const extra=Array.isArray(data)&&data[1]?data[1]:info;
+        if(!info?.nickname) throw new Error("UID tidak dijumpai");
+        document.getElementById("pi-nickname").innerText=info.nickname;
+        document.getElementById("pi-region").innerText=info.region||"N/A";
+        document.getElementById("pi-level").innerText=extra.level||"N/A";
+        document.getElementById("pi-likes").innerText=extra.likes!=null?Number(extra.likes).toLocaleString():"N/A";
+        if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
+        document.getElementById("player-info").classList.remove("hidden");
+    } catch(e){ alert("Ralat Check ID: "+e.message); }
+    finally{ btn.innerText="CHECK ID"; btn.disabled=false; }
+}
+
+/* ── SEMAK LIMIT (OWNER) ── */
+async function checkApiLimit(){
+    const uid=document.getElementById("target-uid").value.trim();
+    if(!uid) return alert("Masukkan UID dulu.");
+    const btn=document.getElementById("limit-btn");
+    btn.innerText="MENYEMAK..."; btn.disabled=true;
+    setStatus("> MENYEMAK LIMIT API...","#9ca3af");
+    try{
+        const result=await ffFetch(`${FF_LIKES_URL}?key=${_ak()}&uid=${uid}`);
+        if(result?.key_info){
+            updateLimitBar(result.key_info);
+            const ki=result.key_info;
+            setStatus(`> Limit: ${ki.daily_usage}/${ki.daily_limit}/hari | Sisa: ${ki.daily_remaining}`,"#a78bfa");
+        } else { setStatus("> key_info tiada.","#fbbf24"); }
+    } catch(e){ setStatus("> Gagal: "+e.message,"#f87171"); }
+    finally{ btn.innerText="🔍 SEMAK LIMIT API"; btn.disabled=false; }
+}
+
+/* ── EXECUTE ORDER ── */
+async function executeOrder(){
+    const uid=document.getElementById("target-uid").value.trim();
+    const price=parseFloat(document.getElementById("package-select").value);
+    const btn=document.getElementById("order-btn");
+    if(!uid) return alert("Masukkan UID!");
+    btn.disabled=true;
+    setStatus("> CONNECTING API...","#9ca3af");
+    try{
+        const {data:u,error}=await _sb.from("database panel").select("balance").eq("username",currentUser.username).single();
+        if(error) throw error;
+        if(parseFloat(u.balance)<price) throw new Error(`Kredit tidak cukup! Baki: $${parseFloat(u.balance).toFixed(2)}`);
+        const result=await ffFetch(`${FF_LIKES_URL}?key=${_ak()}&uid=${uid}`);
+        if(!isOk(result)) throw new Error(result?.message||result?.msg||result?.error||JSON.stringify(result));
+        if(result?.key_info) updateLimitBar(result.key_info);
+        const newBal=parseFloat((parseFloat(u.balance)-price).toFixed(2));
+        await _sb.from("database panel").update({balance:newBal}).eq("username",currentUser.username);
+        document.getElementById("balance-amt").innerText=newBal.toFixed(2);
+        currentUser.balance=newBal;
+        const given=parseInt(result.LikesGivenByAPI??result.likes_given??0);
+        addLikes(given); addTodayOrder(); addUidLikes(uid,given);
+        if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
+        setStatus(`> BERJAYA! +${given} likes diproses.`,"#4ade80");
+    } catch(e){ setStatus("> GAGAL: "+e.message,"#f87171"); }
+    finally{ btn.disabled=false; }
+}
+
+/* ── TRANSFER ── */
+async function executeTransfer(){
+    const target=document.getElementById("tf-username").value.trim().toLowerCase();
+    const amt=parseFloat(document.getElementById("tf-amount").value);
+    if(!target||isNaN(amt)||amt<=0) return alert("Isi Username & Amaun yang sah!");
+    try{
+        const {data:rec,error}=await _sb.from("database panel").select("balance").eq("username",target).single();
+        if(error||!rec) throw new Error("User tidak wujud!");
+        await _sb.from("database panel").update({balance:rec.balance+amt}).eq("username",target);
+        alert(`✅ Berjaya pindah $${amt.toFixed(2)} ke ${target.toUpperCase()}`);
+        document.getElementById("tf-username").value=""; document.getElementById("tf-amount").value="";
+    } catch(e){ alert("Gagal: "+e.message); }
+}
+
+/* ══════════════════════════════════════════
+   MANAGE TAB — Rank & Ban System
+══════════════════════════════════════════ */
+
+async function lookupUser(){
+    const uname=document.getElementById("mg-username").value.trim().toLowerCase();
+    if(!uname) return alert("Masukkan username!");
+    if(uname===currentUser.username) return alert("Tidak boleh manage akaun sendiri!");
+    const btn=document.getElementById("mg-lookup-btn");
+    btn.innerText="..."; btn.disabled=true;
+    document.getElementById("mg-user-card").classList.add("hidden");
+    try{
+        const {data,error}=await _sb.from("database panel").select("*").eq("username",uname).maybeSingle();
+        if(error) throw error;
+        if(!data) throw new Error("User tidak wujud!");
+
+        mgTarget=data;
+        const rank=(data.rank||"MEMBER").toUpperCase();
+
+        document.getElementById("mg-uname").innerText=data.username.toUpperCase();
+        document.getElementById("mg-ubal").innerText=parseFloat(data.balance).toFixed(2);
+
+        const badge=document.getElementById("mg-urank-badge");
+        badge.innerText=rank;
+        const s=rankStyle(rank);
+        badge.style.background=s.bg; badge.style.color=s.color;
+
+        /* OWNER: show rank change section */
+        if(currentRank==="OWNER"){
+            const rs=document.getElementById("mg-rank-section");
+            rs.style.display="block";
+            const sel=document.getElementById("mg-new-rank");
+            sel.value=(rank==="BANNED"?"MEMBER":rank);
         }
 
-        async function ffFetch(url) {
-            try {
-                const res = await fetch(url, { mode: 'cors' });
-                if (res.ok) return await res.json();
-            } catch (_) {}
+        /* Show/hide ban buttons */
+        const isBanned=rank==="BANNED";
+        document.getElementById("mg-ban-btn").style.display=isBanned?"none":"block";
+        document.getElementById("mg-unban-btn").style.display=isBanned?"block":"none";
 
-            const proxied = await fetch(CORS_PROXY + encodeURIComponent(url));
-            if (!proxied.ok) throw new Error("API tidak dapat dihubungi (status " + proxied.status + ")");
-            return await proxied.json();
+        /* RESELLER cannot ban anyone */
+        if(currentRank==="RESELLER"){
+            document.getElementById("mg-ban-btn").style.display="none";
+            document.getElementById("mg-unban-btn").style.display="none";
+            mgStatus("⛔ Reseller tidak dibenarkan ban mana-mana akaun.","#f87171");
         }
 
-        async function checkId() {
-            const uid = document.getElementById('target-uid').value.trim();
-            const btn = document.getElementById('check-btn');
-            if (!uid) return;
-            btn.innerText = "...";
-            btn.disabled = true;
-            try {
-                const data = await ffFetch(`${FF_NICKNAME_API}?uid=${uid}`);
-                const info  = Array.isArray(data) ? data[0] : data;
-                const extra = Array.isArray(data) && data[1] ? data[1] : info;
-                if (!info || !info.nickname) throw new Error("UID tidak dijumpai");
-                document.getElementById('pi-nickname').innerText = info.nickname;
-                document.getElementById('pi-region').innerText  = info.region || "N/A";
-                document.getElementById('pi-level').innerText   = extra.level || "N/A";
-                document.getElementById('pi-likes').innerText   = extra.likes || "N/A";
-                document.getElementById('player-info').classList.remove('hidden');
-            } catch (e) {
-                alert("Ralat Check ID: " + e.message);
-            } finally {
-                btn.innerText = "CHECK ID";
-                btn.disabled  = false;
-            }
-        }
+        document.getElementById("mg-user-card").classList.remove("hidden");
+        mgStatus("","");
+    } catch(e){ alert(e.message); }
+    finally{ btn.innerText="CARI"; btn.disabled=false; }
+}
 
-        async function executeOrder() {
-            const uid    = document.getElementById('target-uid').value.trim();
-            const price  = parseFloat(document.getElementById('package-select').value);
-            const status = document.getElementById('status-msg');
-            if (!uid) return alert("Masukkan UID!");
+async function changeRank(){
+    if(!mgTarget||currentRank!=="OWNER") return;
+    const newRank=document.getElementById("mg-new-rank").value;
+    const uname=mgTarget.username;
+    if(uname===currentUser.username) return alert("Tidak boleh tukar rank sendiri!");
+    if(!confirm(`Tukar ${uname.toUpperCase()} kepada ${newRank}?`)) return;
+    try{
+        const {error}=await _sb.from("database panel").update({rank:newRank}).eq("username",uname);
+        if(error) throw error;
+        mgTarget.rank=newRank;
+        const badge=document.getElementById("mg-urank-badge");
+        badge.innerText=newRank;
+        const s=rankStyle(newRank);
+        badge.style.background=s.bg; badge.style.color=s.color;
+        /* refresh ban buttons */
+        const isBanned=newRank==="BANNED";
+        document.getElementById("mg-ban-btn").style.display=isBanned?"none":"block";
+        document.getElementById("mg-unban-btn").style.display=isBanned?"block":"none";
+        mgStatus(`✅ Rank ${uname.toUpperCase()} ditukar kepada ${newRank}.`,"#4ade80");
+    } catch(e){ mgStatus("Gagal: "+e.message,"#f87171"); }
+}
 
-            try {
-                const { data: user, error } = await _supabase.from('database panel').select('balance').eq('username', currentUser.username).single();
-                if (error) throw error;
-                if (user.balance < price) throw new Error("Kredit tidak mencukupi! Baki: $" + parseFloat(user.balance).toFixed(2));
+async function banUser(){
+    if(!mgTarget) return;
+    const uname=mgTarget.username;
+    const targetRank=(mgTarget.rank||"MEMBER").toUpperCase();
+    if(uname===currentUser.username) return alert("Tidak boleh ban diri sendiri!");
+    if(currentRank==="RESELLER") return alert("⛔ Reseller tidak dibenarkan ban mana-mana akaun!");
+    if(!confirm(`BAN akaun ${uname.toUpperCase()}? User tidak akan boleh login.`)) return;
+    try{
+        const {error}=await _sb.from("database panel").update({rank:"BANNED"}).eq("username",uname);
+        if(error) throw error;
+        mgTarget.rank="BANNED";
+        const badge=document.getElementById("mg-urank-badge");
+        badge.innerText="BANNED";
+        const s=rankStyle("BANNED");
+        badge.style.background=s.bg; badge.style.color=s.color;
+        document.getElementById("mg-ban-btn").style.display="none";
+        document.getElementById("mg-unban-btn").style.display="block";
+        if(currentRank==="OWNER") document.getElementById("mg-new-rank").value="MEMBER";
+        mgStatus(`🚫 ${uname.toUpperCase()} telah dibanned.`,"#f87171");
+    } catch(e){ mgStatus("Gagal: "+e.message,"#f87171"); }
+}
 
-                status.innerText = "> INJECTING...";
-                document.getElementById('order-btn').disabled = true;
+async function unbanUser(){
+    if(!mgTarget||currentRank!=="OWNER") return;
+    const uname=mgTarget.username;
+    if(!confirm(`UNBAN akaun ${uname.toUpperCase()}? Rank akan dikembalikan kepada MEMBER.`)) return;
+    try{
+        const {error}=await _sb.from("database panel").update({rank:"MEMBER"}).eq("username",uname);
+        if(error) throw error;
+        mgTarget.rank="MEMBER";
+        const badge=document.getElementById("mg-urank-badge");
+        badge.innerText="MEMBER";
+        const s=rankStyle("MEMBER");
+        badge.style.background=s.bg; badge.style.color=s.color;
+        document.getElementById("mg-ban-btn").style.display="block";
+        document.getElementById("mg-unban-btn").style.display="none";
+        document.getElementById("mg-new-rank").value="MEMBER";
+        mgStatus(`✅ ${uname.toUpperCase()} telah di-unban.`,"#4ade80");
+    } catch(e){ mgStatus("Gagal: "+e.message,"#f87171"); }
+}
 
-                const result = await ffFetch(`${FF_LIKES_API}?key=${API_KEY}&uid=${uid}`);
-
-                if (result.status !== "success" && result.status !== 1 && result.status !== "1") {
-                    throw new Error(result.message || result.msg || "API gagal — cuba semula");
-                }
-
-                const newBal = parseFloat((user.balance - price).toFixed(2));
-                await _supabase.from('database panel').update({ balance: newBal }).eq('username', currentUser.username);
-                document.getElementById('balance-amt').innerText = newBal.toFixed(2);
-                currentUser.balance = newBal;
-                status.innerText = "> BERJAYA! LIKES SEDANG DIPROSES.";
-            } catch (e) {
-                status.innerText = "> GAGAL: " + e.message;
-            } finally {
-                document.getElementById('order-btn').disabled = false;
-            }
-        }
-
-        async function executeTransfer() {
-            const target = document.getElementById('tf-username').value.trim().toLowerCase();
-            const amt    = parseFloat(document.getElementById('tf-amount').value);
-            if (!target || isNaN(amt) || amt <= 0) return alert("Isi Username & Amaun yang sah!");
-            try {
-                const { data: rec, error } = await _supabase.from('database panel').select('balance').eq('username', target).single();
-                if (error || !rec) throw new Error("User tidak wujud!");
-                await _supabase.from('database panel').update({ balance: rec.balance + amt }).eq('username', target);
-                alert(`Berjaya pindah $${amt.toFixed(2)} ke ${target}`);
-                document.getElementById('tf-username').value = '';
-                document.getElementById('tf-amount').value   = '';
-            } catch (e) {
-                alert("Gagal: " + e.message);
-            }
-        }
-
-        function showQR() {
-            document.getElementById('qr-modal').classList.remove('hidden');
-        }
-
-        function sendWA() {
-            window.open(`https://wa.me/601165406482?text=SAYA%20DAH%20TOPUP%20USER%20${currentUser.username.toUpperCase()}`, '_blank');
-        }
-    </script>
+function mgStatus(txt,color){ const el=document.getElementById("mg-status"); el.innerText=txt; el.style.color=color; }
+function setStatus(txt,color){ const el=document.getElementById("status-msg"); el.innerText=txt; el.style.color=color; }
+function showQR(){ document.getElementById("qr-modal").classList.remove("hidden"); }
+function sendWA(){ window.open(`https://wa.me/601165406482?text=SAYA%20DAH%20TOPUP%20USER%20${currentUser.username.toUpperCase()}`,"_blank"); }
+</script>
 </body>
 </html>
