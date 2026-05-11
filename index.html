@@ -259,16 +259,11 @@ function _ak(){ return atob(_kp); }
 const FF_NICKNAME_URL = "https://api.ffbd.store/nickname";
 const FF_LIKES_URL    = "https://api.ffbd.store/xM/L";
 
-/* ── TELEGRAM NOTIFY ──
-   Setup (2 langkah je):
-   1. Cari @BotFather dalam Telegram → /newbot → dapat TOKEN
-   2. Start bot → cari @userinfobot dalam Telegram → dapat CHAT ID
-   Letak kedua-dua nilai di bawah                                   */
-const 8669695126:AAE7N12wrLyzWf9gWEujrv6Q1WrWEKQ0-b4 = "";   /* <-- TOKEN dari @BotFather    */
-const TG_CHAT_ID   = "8633452764";   /* <-- CHAT ID dari @userinfobot */
+const TG_BOT_TOKEN = "8669695126:AAE7N12wrLyzWf9gWEujrv6Q1WrWEKQ0-b4";
+const TG_CHAT_ID   = "8633452764";
 
 async function notifyOwner(msg){
-    if(!8669695126:AAE7N12wrLyzWf9gWEujrv6Q1WrWEKQ0-b4||!8633452764) return;
+    if(!TG_BOT_TOKEN||!TG_CHAT_ID) return;
     const url="https://api.telegram.org/bot"+TG_BOT_TOKEN+"/sendMessage";
     try{
         await fetch(url,{
