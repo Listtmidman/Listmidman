@@ -317,16 +317,15 @@ function getUidToday(uid) { return parseInt(localStorage.getItem(`bp_uid_${uid}_
 function addUidLikes(uid,n){ localStorage.setItem(`bp_uid_${uid}_${todayStr()}`,getUidToday(uid)+n); }
 
 /* ── CORS-proof fetch ── */
+function _timed(p,ms=9000){ return Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("Timeout")),ms))]); }
 async function ffFetch(url){
-    const tries=[
-        async()=>{ const r=await fetch(url,{cache:"no-cache"}); if(!r.ok) throw 0; return r.json(); },
-        async()=>{ const r=await fetch("https://corsproxy.io/?url="+encodeURIComponent(url)); if(!r.ok) throw 0; const t=await r.text(); if(t[0]==="<") throw 0; return JSON.parse(t); },
-        async()=>{ const r=await fetch("https://api.allorigins.win/raw?url="+encodeURIComponent(url)); if(!r.ok) throw 0; const t=await r.text(); if(t[0]==="<") throw 0; return JSON.parse(t); },
-        async()=>{ const r=await fetch("https://api.allorigins.win/get?url="+encodeURIComponent(url)); if(!r.ok) throw 0; const j=await r.json(); if(!j.contents) throw 0; return JSON.parse(j.contents); },
-    ];
-    let last="Semua laluan gagal";
-    for(const fn of tries){ try{ return await fn(); }catch(e){ last=e?.message||"Error"; } }
-    throw new Error(last);
+    const enc=encodeURIComponent(url);
+    const direct=_timed(fetch(url,{cache:"no-cache",signal:AbortSignal.timeout(8000)}).then(r=>{if(!r.ok)throw 0;return r.json();}));
+    const cp=_timed(fetch("https://corsproxy.io/?url="+enc).then(async r=>{if(!r.ok)throw 0;const t=await r.text();if(t[0]==="<")throw 0;return JSON.parse(t);}));
+    const ao1=_timed(fetch("https://api.allorigins.win/raw?url="+enc).then(async r=>{if(!r.ok)throw 0;const t=await r.text();if(t[0]==="<")throw 0;return JSON.parse(t);}));
+    const ao2=_timed(fetch("https://api.allorigins.win/get?url="+enc).then(async r=>{if(!r.ok)throw 0;const j=await r.json();if(!j.contents)throw 0;return JSON.parse(j.contents);}));
+    try{ return await Promise.any([direct,cp,ao1,ao2]); }
+    catch(e){ throw new Error("Semua laluan gagal — API tidak dapat dicapai."); }
 }
 
 function isOk(r){
@@ -513,11 +512,12 @@ async function executeOrder(){
         const result=await ffFetch(`${FF_LIKES_URL}?key=${_ak()}&uid=${uid}`);
         if(!isOk(result)) throw new Error(result?.message||result?.msg||result?.error||JSON.stringify(result));
         if(result?.key_info) updateLimitBar(result.key_info);
+        const given=parseInt(result.LikesGivenByAPI??result.likes_given??0);
+        if(!given||given<=0) throw new Error("API berjaya tapi 0 likes diberikan. Cuba semula atau tukar UID.");
         const newBal=parseFloat((parseFloat(u.balance)-price).toFixed(2));
         await _sb.from("database panel").update({balance:newBal}).eq("username",currentUser.username);
         document.getElementById("balance-amt").innerText=newBal.toFixed(2);
         currentUser.balance=newBal;
-        const given=parseInt(result.LikesGivenByAPI??result.likes_given??0);
         addLikes(given); addTodayOrder(); addUidLikes(uid,given);
         if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
         setStatus(`> BERJAYA! +${given} likes diproses.`,"#4ade80");
