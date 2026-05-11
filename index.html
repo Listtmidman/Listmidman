@@ -202,17 +202,13 @@
         <button onclick="executeTransfer()" class="btn-main" style="background:#16a34a;">KREDITKAN MEMBER</button>
     </div>
 
-    <!-- MANAGE (OWNER + RESELLER) -->
+    <!-- MANAGE -->
     <div id="page-manage" class="hidden glass p-6 space-y-4">
         <h4 class="text-center text-xs tracking-widest text-orange-300 uppercase">User Management</h4>
-
-        <!-- Search user -->
         <div class="flex gap-2">
             <input id="mg-username" type="text" placeholder="USERNAME SASARAN" class="input-field" style="text-transform:uppercase;">
             <button onclick="lookupUser()" class="check-btn" id="mg-lookup-btn">CARI</button>
         </div>
-
-        <!-- User info result -->
         <div id="mg-user-card" class="hidden user-info-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <div>
@@ -221,8 +217,6 @@
                 </div>
                 <span id="mg-urank-badge" style="font-size:9px;padding:3px 10px;border-radius:99px;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:rgba(88,28,135,0.4);color:#c4b5fd;">MEMBER</span>
             </div>
-
-            <!-- OWNER: change rank -->
             <div id="mg-rank-section" class="owner-only" style="display:none;">
                 <p style="font-size:9px;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Tukar Rank:</p>
                 <div style="display:flex;gap:8px;">
@@ -234,20 +228,12 @@
                     <button onclick="changeRank()" class="action-btn" style="background:#a78bfa;color:black;width:auto;padding:10px 16px;white-space:nowrap;">SET RANK</button>
                 </div>
             </div>
-
-            <!-- Ban / Unban buttons -->
             <div style="display:flex;gap:8px;margin-top:10px;">
-                <button id="mg-ban-btn" onclick="banUser()" class="action-btn" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);">
-                    🚫 BAN AKAUN
-                </button>
-                <button id="mg-unban-btn" onclick="unbanUser()" class="action-btn" style="background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.4);">
-                    ✅ UNBAN
-                </button>
+                <button id="mg-ban-btn" onclick="banUser()" class="action-btn" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);">🚫 BAN AKAUN</button>
+                <button id="mg-unban-btn" onclick="unbanUser()" class="action-btn" style="background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.4);">✅ UNBAN</button>
             </div>
-
             <p id="mg-status" style="text-align:center;font-size:10px;color:#9ca3af;margin-top:8px;font-family:monospace;"></p>
         </div>
-
         <p class="text-[9px] text-gray-600 text-center" id="mg-rules"></p>
     </div>
 
@@ -264,18 +250,34 @@
 </div>
 
 <script>
-/* ── SUPABASE ── */
 const _sb = supabase.createClient(
     "https://ugszmvmawidtoqjidmor.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnc3ptdm1hd2lkdG9xamlkbW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjkyMTYsImV4cCI6MjA5MzgwNTIxNn0.2rRQ7DbKcN4Hp_zx-Jjj4XLLfDjYu2yy2U9ecLP_oJI"
 );
-
-/* ── API KEY (obfuscated) ── */
 const _kp = ["VDU","yNk","M0"].join("");
 function _ak(){ return atob(_kp); }
-
 const FF_NICKNAME_URL = "https://api.ffbd.store/nickname";
 const FF_LIKES_URL    = "https://api.ffbd.store/xM/L";
+
+/* ── TELEGRAM NOTIFY ──
+   Setup (2 langkah je):
+   1. Cari @BotFather dalam Telegram → /newbot → dapat TOKEN
+   2. Start bot → cari @userinfobot dalam Telegram → dapat CHAT ID
+   Letak kedua-dua nilai di bawah                                   */
+const 8669695126:AAE7N12wrLyzWf9gWEujrv6Q1WrWEKQ0-b4 = "";   /* <-- TOKEN dari @BotFather    */
+const TG_CHAT_ID   = "8633452764";   /* <-- CHAT ID dari @userinfobot */
+
+async function notifyOwner(msg){
+    if(!8669695126:AAE7N12wrLyzWf9gWEujrv6Q1WrWEKQ0-b4||!8633452764) return;
+    const url="https://api.telegram.org/bot"+TG_BOT_TOKEN+"/sendMessage";
+    try{
+        await fetch(url,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({chat_id:TG_CHAT_ID,text:msg})
+        });
+    }catch(_){}
+}
 
 const PACKAGES = [
     {qty:100,   M:0.80,  R:0.50,  O:0.10 },
@@ -288,44 +290,39 @@ const PACKAGES = [
     {qty:30000, M:140.00,R:85.00, O:15.00},
 ];
 const PRICE_KEY = {MEMBER:"M",RESELLER:"R",OWNER:"O"};
-
 const RESELLERS = [
     {name:"LUQQSTORE",phone:"601127112378"},
     {name:"ZERO",     phone:"60198424337" },
     {name:"MOR",      phone:"601112614932"},
 ];
 
-const RANK_ORDER = {MEMBER:0,RESELLER:1,OWNER:2,BANNED:-1};
-
 let currentUser = null;
 let currentRank = "MEMBER";
 let keyShown    = false;
-let mgTarget    = null; // looked-up user in manage tab
+let mgTarget    = null;
 
-/* ── TODAY helper ── */
 function todayStr(){ return new Date().toISOString().slice(0,10); }
-
-/* ── localStorage helpers ── */
-function getLikes()       { return parseInt(localStorage.getItem("bp_total_likes")||"0"); }
-function addLikes(n)      { localStorage.setItem("bp_total_likes",getLikes()+n); refreshOwnerStats(); }
-function getTodayOrders() {
+function getLikes(){ return parseInt(localStorage.getItem("bp_total_likes")||"0"); }
+function addLikes(n){ localStorage.setItem("bp_total_likes",getLikes()+n); refreshOwnerStats(); }
+function getTodayOrders(){
     if(localStorage.getItem("bp_today_date")!==todayStr()){ localStorage.setItem("bp_today_date",todayStr()); localStorage.setItem("bp_today_orders","0"); }
     return parseInt(localStorage.getItem("bp_today_orders")||"0");
 }
-function addTodayOrder()  { localStorage.setItem("bp_today_orders",getTodayOrders()+1); refreshOwnerStats(); }
-function getUidToday(uid) { return parseInt(localStorage.getItem(`bp_uid_${uid}_${todayStr()}`)||"0"); }
+function addTodayOrder(){ localStorage.setItem("bp_today_orders",getTodayOrders()+1); refreshOwnerStats(); }
+function getUidToday(uid){ return parseInt(localStorage.getItem(`bp_uid_${uid}_${todayStr()}`)||"0"); }
 function addUidLikes(uid,n){ localStorage.setItem(`bp_uid_${uid}_${todayStr()}`,getUidToday(uid)+n); }
 
-/* ── CORS-proof fetch ── */
-function _timed(p,ms=9000){ return Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("Timeout")),ms))]); }
+function _timed(p,ms=10000){ return Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]); }
+function _parseJ(t){ if(!t||t[0]==="<")throw new Error("html"); return JSON.parse(t); }
 async function ffFetch(url){
     const enc=encodeURIComponent(url);
-    const direct=_timed(fetch(url,{cache:"no-cache",signal:AbortSignal.timeout(8000)}).then(r=>{if(!r.ok)throw 0;return r.json();}));
-    const cp=_timed(fetch("https://corsproxy.io/?url="+enc).then(async r=>{if(!r.ok)throw 0;const t=await r.text();if(t[0]==="<")throw 0;return JSON.parse(t);}));
-    const ao1=_timed(fetch("https://api.allorigins.win/raw?url="+enc).then(async r=>{if(!r.ok)throw 0;const t=await r.text();if(t[0]==="<")throw 0;return JSON.parse(t);}));
-    const ao2=_timed(fetch("https://api.allorigins.win/get?url="+enc).then(async r=>{if(!r.ok)throw 0;const j=await r.json();if(!j.contents)throw 0;return JSON.parse(j.contents);}));
-    try{ return await Promise.any([direct,cp,ao1,ao2]); }
-    catch(e){ throw new Error("Semua laluan gagal — API tidak dapat dicapai."); }
+    const direct=_timed(fetch(url,{cache:"no-cache"}).then(r=>{ if(!r.ok) throw new Error(""); return r.json(); }));
+    const cp    =_timed(fetch("https://corsproxy.io/?url="+enc).then(r=>r.text()).then(_parseJ));
+    const ao1   =_timed(fetch("https://api.allorigins.win/raw?url="+enc).then(r=>r.text()).then(_parseJ));
+    const ao2   =_timed(fetch("https://api.allorigins.win/get?url="+enc).then(r=>r.json()).then(j=>{ if(!j.contents) throw new Error(""); return JSON.parse(j.contents); }));
+    const ct    =_timed(fetch("https://api.codetabs.com/v1/proxy?quest="+enc).then(r=>r.text()).then(_parseJ));
+    try{ return await Promise.any([direct,cp,ao1,ao2,ct]); }
+    catch(e){ throw new Error("API tidak dapat dicapai. Semak sambungan internet."); }
 }
 
 function isOk(r){
@@ -335,26 +332,15 @@ function isOk(r){
     if(r.success===true||r.success===1) return true;
     return false;
 }
-
-/* ── Rank badge helper ── */
 function rankStyle(rank){
-    const styles={
-        OWNER:   {bg:"rgba(120,53,15,0.5)",  color:"#fbbf24"},
-        RESELLER:{bg:"rgba(20,83,45,0.5)",   color:"#4ade80"},
-        MEMBER:  {bg:"rgba(88,28,135,0.4)",  color:"#c4b5fd"},
-        BANNED:  {bg:"rgba(127,29,29,0.6)",  color:"#f87171"},
-    };
-    return styles[rank]||styles.MEMBER;
+    const s={OWNER:{bg:"rgba(120,53,15,0.5)",color:"#fbbf24"},RESELLER:{bg:"rgba(20,83,45,0.5)",color:"#4ade80"},MEMBER:{bg:"rgba(88,28,135,0.4)",color:"#c4b5fd"},BANNED:{bg:"rgba(127,29,29,0.6)",color:"#f87171"}};
+    return s[rank]||s.MEMBER;
 }
-
-/* ── OWNER stats display ── */
 function refreshOwnerStats(){
     if(currentRank!=="OWNER") return;
     document.getElementById("total-likes-display").innerText=getLikes().toLocaleString();
     document.getElementById("today-orders-display").innerText=getTodayOrders();
 }
-
-/* ── Limit bar ── */
 function updateLimitBar(ki){
     if(!ki||currentRank!=="OWNER") return;
     localStorage.setItem("bp_ki",JSON.stringify(ki));
@@ -367,10 +353,7 @@ function updateLimitBar(ki){
     document.getElementById("limit-total-txt").innerText=`Total API: ${ki.total_usage}/${ki.total_limit}`;
     document.getElementById("limit-remain-txt").innerText=`Sisa: ${ki.total_remain}`;
 }
-
 function toggleKey(el){ keyShown=!keyShown; el.innerText=keyShown?_ak():"••••••"; el.style.color=keyShown?"#a78bfa":"#4b5563"; }
-
-/* ── Tab switching ── */
 function switchTab(t){
     ["terminal","topup","transfer","manage"].forEach(x=>document.getElementById("page-"+x).classList.add("hidden"));
     document.getElementById("page-"+t).classList.remove("hidden");
@@ -383,11 +366,10 @@ function switchSub(s){
     document.getElementById("sub-"+s).classList.add("active");
 }
 
-/* ── AUTH ── */
 async function handleAuth(type){
     const user=document.getElementById("auth-user").value.trim().toLowerCase();
     const pass=document.getElementById("auth-pass").value.trim();
-    const msg =document.getElementById("auth-msg");
+    const msg=document.getElementById("auth-msg");
     if(!user||!pass) return alert("Sila isi Username & Password!");
     msg.innerText="> MENGHUBUNGKAN...";
     try{
@@ -401,31 +383,26 @@ async function handleAuth(type){
             const {data,error}=await _sb.from("database panel").select("*").eq("username",user).eq("password",pass).maybeSingle();
             if(error) throw error;
             if(!data) throw new Error("Username atau Password salah!");
-            /* BAN CHECK */
             if((data.rank||"").toUpperCase()==="BANNED") throw new Error("⛔ Akaun anda telah dibanned. Hubungi Owner.");
             currentUser=data; initDashboard();
         }
     } catch(e){ alert(e.message); msg.innerText="> AKSES DITOLAK"; }
 }
 
-/* ── INIT DASHBOARD ── */
 function initDashboard(){
     document.getElementById("auth-container").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
     document.getElementById("display-name").innerText=currentUser.username.toUpperCase();
     document.getElementById("balance-amt").innerText=parseFloat(currentUser.balance).toFixed(2);
     currentRank=(currentUser.rank||"MEMBER").toUpperCase();
-
     const badge=document.getElementById("user-rank");
     badge.innerText=currentRank;
     const s=rankStyle(currentRank);
     badge.style.background=s.bg; badge.style.color=s.color;
-
     const pk=PRICE_KEY[currentRank]||"M";
     document.getElementById("package-select").innerHTML=PACKAGES.map(p=>
         `<option value="${p[pk]}">${p.qty.toLocaleString()} LIKES — $${p[pk].toFixed(2)}</option>`
     ).join("");
-
     document.getElementById("likes-price-body").innerHTML=PACKAGES.map(p=>`
         <tr>
             <td class="font-bold text-white">${p.qty>=1000?p.qty/1000+"K":p.qty}</td>
@@ -433,13 +410,11 @@ function initDashboard(){
             <td class="text-yellow-300">$${p.R.toFixed(2)}</td>
             <td class="text-green-400">$${p.O.toFixed(2)}</td>
         </tr>`).join("");
-
     document.getElementById("reseller-list").innerHTML=RESELLERS.map(r=>`
         <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.4);padding:12px;border-radius:12px;border:1px solid rgba(167,139,250,0.2);">
             <span style="font-size:11px;font-weight:bold;color:white;">${r.name} RESELLER</span>
             <a href="https://wa.me/${r.phone}" target="_blank" style="font-size:9px;background:#16a34a;color:white;padding:6px 12px;border-radius:8px;font-weight:bold;text-decoration:none;">WHATSAPP</a>
         </div>`).join("");
-
     if(currentRank==="OWNER"){
         document.querySelectorAll(".owner-only").forEach(el=>{ el.style.display=el.tagName==="DIV"?"block":"flex"; });
         document.getElementById("uid-daily-row").style.cssText="display:flex!important;";
@@ -457,7 +432,6 @@ function initDashboard(){
     }
 }
 
-/* ── CHECK ID ── */
 async function checkId(){
     const uid=document.getElementById("target-uid").value.trim();
     const btn=document.getElementById("check-btn");
@@ -479,7 +453,6 @@ async function checkId(){
     finally{ btn.innerText="CHECK ID"; btn.disabled=false; }
 }
 
-/* ── SEMAK LIMIT (OWNER) ── */
 async function checkApiLimit(){
     const uid=document.getElementById("target-uid").value.trim();
     if(!uid) return alert("Masukkan UID dulu.");
@@ -488,16 +461,12 @@ async function checkApiLimit(){
     setStatus("> MENYEMAK LIMIT API...","#9ca3af");
     try{
         const result=await ffFetch(`${FF_LIKES_URL}?key=${_ak()}&uid=${uid}`);
-        if(result?.key_info){
-            updateLimitBar(result.key_info);
-            const ki=result.key_info;
-            setStatus(`> Limit: ${ki.daily_usage}/${ki.daily_limit}/hari | Sisa: ${ki.daily_remaining}`,"#a78bfa");
-        } else { setStatus("> key_info tiada.","#fbbf24"); }
+        if(result?.key_info){ updateLimitBar(result.key_info); const ki=result.key_info; setStatus(`> Limit: ${ki.daily_usage}/${ki.daily_limit}/hari | Sisa: ${ki.daily_remaining}`,"#a78bfa"); }
+        else { setStatus("> key_info tiada.","#fbbf24"); }
     } catch(e){ setStatus("> Gagal: "+e.message,"#f87171"); }
     finally{ btn.innerText="🔍 SEMAK LIMIT API"; btn.disabled=false; }
 }
 
-/* ── EXECUTE ORDER ── */
 async function executeOrder(){
     const uid=document.getElementById("target-uid").value.trim();
     const price=parseFloat(document.getElementById("package-select").value);
@@ -521,11 +490,12 @@ async function executeOrder(){
         addLikes(given); addTodayOrder(); addUidLikes(uid,given);
         if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
         setStatus(`> BERJAYA! +${given} likes diproses.`,"#4ade80");
+        const waMsg=`🔔 ORDER BARU!\n👤 User: ${currentUser.username.toUpperCase()}\n🎯 UID: ${uid}\n💜 Likes: +${given}\n💰 Harga: $${price.toFixed(2)}\n💳 Baki: $${newBal.toFixed(2)}`;
+        notifyOwner(waMsg);
     } catch(e){ setStatus("> GAGAL: "+e.message,"#f87171"); }
     finally{ btn.disabled=false; }
 }
 
-/* ── TRANSFER ── */
 async function executeTransfer(){
     const target=document.getElementById("tf-username").value.trim().toLowerCase();
     const amt=parseFloat(document.getElementById("tf-amount").value);
@@ -539,10 +509,6 @@ async function executeTransfer(){
     } catch(e){ alert("Gagal: "+e.message); }
 }
 
-/* ══════════════════════════════════════════
-   MANAGE TAB — Rank & Ban System
-══════════════════════════════════════════ */
-
 async function lookupUser(){
     const uname=document.getElementById("mg-username").value.trim().toLowerCase();
     if(!uname) return alert("Masukkan username!");
@@ -554,40 +520,28 @@ async function lookupUser(){
         const {data,error}=await _sb.from("database panel").select("*").eq("username",uname).maybeSingle();
         if(error) throw error;
         if(!data) throw new Error("User tidak wujud!");
-
         mgTarget=data;
         const rank=(data.rank||"MEMBER").toUpperCase();
-
         document.getElementById("mg-uname").innerText=data.username.toUpperCase();
         document.getElementById("mg-ubal").innerText=parseFloat(data.balance).toFixed(2);
-
         const badge=document.getElementById("mg-urank-badge");
         badge.innerText=rank;
         const s=rankStyle(rank);
         badge.style.background=s.bg; badge.style.color=s.color;
-
-        /* OWNER: show rank change section */
         if(currentRank==="OWNER"){
-            const rs=document.getElementById("mg-rank-section");
-            rs.style.display="block";
-            const sel=document.getElementById("mg-new-rank");
-            sel.value=(rank==="BANNED"?"MEMBER":rank);
+            document.getElementById("mg-rank-section").style.display="block";
+            document.getElementById("mg-new-rank").value=(rank==="BANNED"?"MEMBER":rank);
         }
-
-        /* Show/hide ban buttons */
         const isBanned=rank==="BANNED";
         document.getElementById("mg-ban-btn").style.display=isBanned?"none":"block";
         document.getElementById("mg-unban-btn").style.display=isBanned?"block":"none";
-
-        /* RESELLER cannot ban anyone */
         if(currentRank==="RESELLER"){
             document.getElementById("mg-ban-btn").style.display="none";
             document.getElementById("mg-unban-btn").style.display="none";
             mgStatus("⛔ Reseller tidak dibenarkan ban mana-mana akaun.","#f87171");
         }
-
         document.getElementById("mg-user-card").classList.remove("hidden");
-        mgStatus("","");
+        if(currentRank!=="RESELLER") mgStatus("","");
     } catch(e){ alert(e.message); }
     finally{ btn.innerText="CARI"; btn.disabled=false; }
 }
@@ -606,7 +560,6 @@ async function changeRank(){
         badge.innerText=newRank;
         const s=rankStyle(newRank);
         badge.style.background=s.bg; badge.style.color=s.color;
-        /* refresh ban buttons */
         const isBanned=newRank==="BANNED";
         document.getElementById("mg-ban-btn").style.display=isBanned?"none":"block";
         document.getElementById("mg-unban-btn").style.display=isBanned?"block":"none";
@@ -617,7 +570,6 @@ async function changeRank(){
 async function banUser(){
     if(!mgTarget) return;
     const uname=mgTarget.username;
-    const targetRank=(mgTarget.rank||"MEMBER").toUpperCase();
     if(uname===currentUser.username) return alert("Tidak boleh ban diri sendiri!");
     if(currentRank==="RESELLER") return alert("⛔ Reseller tidak dibenarkan ban mana-mana akaun!");
     if(!confirm(`BAN akaun ${uname.toUpperCase()}? User tidak akan boleh login.`)) return;
