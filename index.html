@@ -402,12 +402,12 @@ async function checkId(){
         const data=await ffFetch(`${FF_NICKNAME_URL}?uid=${uid}`);
         const info=Array.isArray(data)?data[0]:data;
         const extra=Array.isArray(data)&&data[1]?data[1]:info;
-        const nick=info?.nickname||info?.PlayerNickname||info?.name||info?.player_name||extra?.nickname||extra?.PlayerNickname||null;
+        const nick=info?.PlayerNickname||info?.nickname||info?.name||info?.player_name||extra?.PlayerNickname||extra?.nickname||null;
         if(!nick) throw new Error("UID tidak dijumpai. Respons: "+JSON.stringify(data).slice(0,120));
         document.getElementById("pi-nickname").innerText=nick;
-        document.getElementById("pi-region").innerText=info.region||info.Region||info.server||"N/A";
-        document.getElementById("pi-level").innerText=extra.level||extra.Level||info.level||"N/A";
-        const likesVal=extra.likes??extra.Likes??info.likes??info.Likes??null;
+        document.getElementById("pi-region").innerText=info.PlayerRegion||info.region||info.Region||info.server||"N/A";
+        document.getElementById("pi-level").innerText=info.Level||extra.Level||info.level||extra.level||"N/A";
+        const likesVal=info.LikesafterCommand??extra.LikesafterCommand??info.likes??extra.likes??info.Likes??null;
         document.getElementById("pi-likes").innerText=likesVal!=null?Number(likesVal).toLocaleString():"N/A";
         if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
         document.getElementById("player-info").classList.remove("hidden");
@@ -444,22 +444,28 @@ async function executeOrder(){
         if(parseFloat(u.balance)<price) throw new Error(`Kredit tidak cukup! Baki: $${parseFloat(u.balance).toFixed(2)}`);
         setStatus("> MENGHANTAR REQUEST KE API...","#9ca3af");
         const result=await ffFetch(`${FF_LIKES_URL}?key=${_ak()}&uid=${uid}`);
-        if(!isOk(result)) throw new Error(result?.message||result?.msg||result?.error||JSON.stringify(result).slice(0,150));
         if(result?.key_info) updateLimitBar(result.key_info);
-        const rawGiven=parseInt(
-            result.LikesGivenByAPI??result.likes_given??result.likes??
-            result.Likes??result.given??result.count??result.total??
-            result.data?.likes??result.data?.given??-1
-        );
-        const given=rawGiven>0?rawGiven:pkgQty;
+        const given=parseInt(result?.LikesGivenByAPI??0);
+        const before=parseInt(result?.LikesbeforeCommand??0);
+        const after=parseInt(result?.LikesafterCommand??0);
+        if(!isOk(result)) throw new Error(result?.message||result?.msg||result?.error||JSON.stringify(result).slice(0,150));
+        if(given<=0){
+            const diff=after-before;
+            if(diff<=0){
+                const st=result?.status;
+                if(st===2) throw new Error(`UID ini dah capai limit likes hari ini (${before.toLocaleString()} likes). Cuba UID lain atau tunggu esok. KREDIT TIDAK DITOLAK.`);
+                throw new Error(`API jawab ok tapi 0 likes diberikan (before:${before} after:${after}). KREDIT TIDAK DITOLAK.`);
+            }
+        }
+        const actualGiven=given>0?given:(after-before>0?after-before:pkgQty);
         const newBal=parseFloat((parseFloat(u.balance)-price).toFixed(2));
         await _sb.from("database panel").update({balance:newBal}).eq("username",currentUser.username);
         document.getElementById("balance-amt").innerText=newBal.toFixed(2);
         currentUser.balance=newBal;
-        addLikes(given); addTodayOrder(); addUidLikes(uid,given);
+        addLikes(actualGiven); addTodayOrder(); addUidLikes(uid,actualGiven);
         if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
-        setStatus(`> BERJAYA! +${given.toLocaleString()} likes diproses.`,"#4ade80");
-        notifyOwner(`🔔 ORDER BARU!\n👤 User: ${currentUser.username.toUpperCase()}\n🎯 UID: ${uid}\n💜 Likes: +${given}\n💰 Harga: $${price.toFixed(2)}\n💳 Baki: $${newBal.toFixed(2)}`);
+        setStatus(`> BERJAYA! +${actualGiven.toLocaleString()} likes diproses. (${before.toLocaleString()} → ${after.toLocaleString()})`, "#4ade80");
+        notifyOwner(`🔔 ORDER BARU!\n👤 User: ${currentUser.username.toUpperCase()}\n🎯 UID: ${uid}\n💜 Likes: +${actualGiven} (${before}→${after})\n💰 Harga: $${price.toFixed(2)}\n💳 Baki: $${newBal.toFixed(2)}`);
     } catch(e){ setStatus("> GAGAL: "+e.message,"#f87171"); }
     finally{ btn.disabled=false; }
 }
@@ -557,17 +563,6 @@ async function unbanUser(){
         const badge=document.getElementById("mg-urank-badge");
         badge.innerText="MEMBER";
         const s=rankStyle("MEMBER"); badge.style.background=s.bg; badge.style.color=s.color;
-        document.getElementById("mg-ban-btn").style.display="block";
-        document.getElementById("mg-unban-btn").style.display="none";
-        document.getElementById("mg-new-rank").value="MEMBER";
-        mgStatus(`✅ ${uname.toUpperCase()} telah di-unban.`,"#4ade80");
-    } catch(e){ mgStatus("Gagal: "+e.message,"#f87171"); }
-}
+        document.getElementById("mg-ban-btn").style.display=" **...**
 
-function mgStatus(txt,color){ const el=document.getElementById("mg-status"); el.innerText=txt; el.style.color=color; }
-function setStatus(txt,color){ const el=document.getElementById("status-msg"); el.innerText=txt; el.style.color=color; }
-function showQR(){ document.getElementById("qr-modal").classList.remove("hidden"); }
-function sendWA(){ window.open(`https://wa.me/601165406482?text=SAYA%20DAH%20TOPUP%20USER%20${currentUser.username.toUpperCase()}`,"_blank"); }
-</script>
-</body>
-</html>
+_This response is too long to display in full._
