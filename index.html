@@ -47,7 +47,6 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-<!-- AUTH -->
 <div id="auth-container" class="w-full max-w-md glass p-8 neon">
     <h2 class="text-2xl font-black text-center mb-6 tracking-widest text-purple-400">SYSTEM ACCESS</h2>
     <div class="flex flex-col space-y-4">
@@ -59,9 +58,7 @@
     <p id="auth-msg" class="text-[10px] mt-4 text-center text-gray-500 font-mono"></p>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard" class="w-full max-w-md space-y-4 hidden">
-
     <div class="notif-box">
         <p class="text-[10px] text-purple-300 font-bold uppercase tracking-widest">System Broadcast:</p>
         <p class="text-[11px] text-white mt-1">🚀 Sila hubungi Reseller di tab TOPUP jika ada masalah kredit.</p>
@@ -79,7 +76,7 @@
                 <p class="text-2xl font-black text-green-400">$<span id="balance-amt">0.00</span></p>
             </div>
         </div>
-        <div id="owner-stats" class="owner-only" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(167,139,250,0.2);">
+        <div id="owner-stats" class="owner-only" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(167,139,250,0.2);">
             <p style="font-size:9px;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚙️ Owner Stats</p>
             <div style="display:flex;gap:8px;margin-bottom:10px;">
                 <div class="stat-box">
@@ -118,7 +115,6 @@
         <div id="tab-manage"   class="tab-btn hidden"  onclick="switchTab('manage')">MANAGE</div>
     </div>
 
-    <!-- TERMINAL -->
     <div id="page-terminal" class="glass p-6 space-y-3">
         <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase italic">Injection Terminal</h4>
         <div class="flex gap-2">
@@ -144,7 +140,6 @@
         <p id="status-msg" class="text-center text-[10px] font-mono text-gray-400">&gt; STANDBY...</p>
     </div>
 
-    <!-- TOPUP -->
     <div id="page-topup" class="hidden glass p-6 space-y-3">
         <h4 class="text-center text-xs tracking-widest text-purple-300 uppercase">Recharge Balance</h4>
         <div class="flex gap-2 p-1 rounded-xl" style="background:rgba(0,0,0,0.4);">
@@ -190,7 +185,6 @@
         </div>
     </div>
 
-    <!-- TRANSFER -->
     <div id="page-transfer" class="hidden glass p-6 space-y-3">
         <h4 class="text-center text-xs tracking-widest text-green-300 uppercase">Admin Transfer</h4>
         <input id="tf-username" type="text" placeholder="TARGET USERNAME" class="input-field" style="text-transform:uppercase;">
@@ -198,7 +192,6 @@
         <button onclick="executeTransfer()" class="btn-main" style="background:#16a34a;">KREDITKAN MEMBER</button>
     </div>
 
-    <!-- MANAGE -->
     <div id="page-manage" class="hidden glass p-6 space-y-4">
         <h4 class="text-center text-xs tracking-widest text-orange-300 uppercase">User Management</h4>
         <div class="flex gap-2">
@@ -236,7 +229,6 @@
     <button onclick="location.reload()" style="background:none;border:none;cursor:pointer;color:#4b5563;font-size:10px;letter-spacing:2px;text-transform:uppercase;width:100%;padding:8px;">[-] Logout Session</button>
 </div>
 
-<!-- QR Modal -->
 <div id="qr-modal" class="modal-bg hidden">
     <div class="bg-[#1a1a1a] p-6 rounded-3xl text-center border border-purple-500 max-w-xs w-full">
         <img src="https://i.postimg.cc/mPb09Tvn/c335e73e-e4f0-4351-92fc-4f76cb54fc9d.jpg" class="w-full rounded-xl mb-4 border-2 border-white">
@@ -254,19 +246,12 @@ const _kp = ["VDU","yNk","M0"].join("");
 function _ak(){ return atob(_kp); }
 const FF_NICKNAME_URL = "https://api.ffbd.store/nickname";
 const FF_LIKES_URL    = "https://api.ffbd.store/xM/L";
-
 const TG_BOT_TOKEN = "8669695126:AAE7N12wrLyzWf9gWEujrv6Q1WrWEKQ0-b4";
 const TG_CHAT_ID   = "8633452764";
 
 async function notifyOwner(msg){
     if(!TG_BOT_TOKEN||!TG_CHAT_ID) return;
-    try{
-        await fetch("https://api.telegram.org/bot"+TG_BOT_TOKEN+"/sendMessage",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({chat_id:TG_CHAT_ID,text:msg})
-        });
-    }catch(_){}
+    try{ await fetch("https://api.telegram.org/bot"+TG_BOT_TOKEN+"/sendMessage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:TG_CHAT_ID,text:msg})}); }catch(_){}
 }
 
 const PACKAGES = [
@@ -286,10 +271,7 @@ const RESELLERS = [
     {name:"MOR",      phone:"601112614932"},
 ];
 
-let currentUser = null;
-let currentRank = "MEMBER";
-let keyShown    = false;
-let mgTarget    = null;
+let currentUser=null, currentRank="MEMBER", keyShown=false, mgTarget=null;
 
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function getLikes(){ return parseInt(localStorage.getItem("bp_total_likes")||"0"); }
@@ -388,24 +370,11 @@ function initDashboard(){
     currentRank=(currentUser.rank||"MEMBER").toUpperCase();
     const badge=document.getElementById("user-rank");
     badge.innerText=currentRank;
-    const s=rankStyle(currentRank);
-    badge.style.background=s.bg; badge.style.color=s.color;
+    const s=rankStyle(currentRank); badge.style.background=s.bg; badge.style.color=s.color;
     const pk=PRICE_KEY[currentRank]||"M";
-    document.getElementById("package-select").innerHTML=PACKAGES.map(p=>
-        `<option value="${p[pk]}">${p.qty.toLocaleString()} LIKES — $${p[pk].toFixed(2)}</option>`
-    ).join("");
-    document.getElementById("likes-price-body").innerHTML=PACKAGES.map(p=>`
-        <tr>
-            <td class="font-bold text-white">${p.qty>=1000?p.qty/1000+"K":p.qty}</td>
-            <td class="text-purple-300">$${p.M.toFixed(2)}</td>
-            <td class="text-yellow-300">$${p.R.toFixed(2)}</td>
-            <td class="text-green-400">$${p.O.toFixed(2)}</td>
-        </tr>`).join("");
-    document.getElementById("reseller-list").innerHTML=RESELLERS.map(r=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.4);padding:12px;border-radius:12px;border:1px solid rgba(167,139,250,0.2);">
-            <span style="font-size:11px;font-weight:bold;color:white;">${r.name} RESELLER</span>
-            <a href="https://wa.me/${r.phone}" target="_blank" style="font-size:9px;background:#16a34a;color:white;padding:6px 12px;border-radius:8px;font-weight:bold;text-decoration:none;">WHATSAPP</a>
-        </div>`).join("");
+    document.getElementById("package-select").innerHTML=PACKAGES.map(p=>`<option value="${p[pk]}">${p.qty.toLocaleString()} LIKES — $${p[pk].toFixed(2)}</option>`).join("");
+    document.getElementById("likes-price-body").innerHTML=PACKAGES.map(p=>`<tr><td class="font-bold text-white">${p.qty>=1000?p.qty/1000+"K":p.qty}</td><td class="text-purple-300">$${p.M.toFixed(2)}</td><td class="text-yellow-300">$${p.R.toFixed(2)}</td><td class="text-green-400">$${p.O.toFixed(2)}</td></tr>`).join("");
+    document.getElementById("reseller-list").innerHTML=RESELLERS.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.4);padding:12px;border-radius:12px;border:1px solid rgba(167,139,250,0.2);"><span style="font-size:11px;font-weight:bold;color:white;">${r.name} RESELLER</span><a href="https://wa.me/${r.phone}" target="_blank" style="font-size:9px;background:#16a34a;color:white;padding:6px 12px;border-radius:8px;font-weight:bold;text-decoration:none;">WHATSAPP</a></div>`).join("");
     if(currentRank==="OWNER"){
         document.querySelectorAll(".owner-only").forEach(el=>{ el.style.display=el.tagName==="DIV"?"block":"flex"; });
         document.getElementById("uid-daily-row").style.cssText="display:flex!important;";
@@ -462,7 +431,9 @@ async function checkApiLimit(){
 
 async function executeOrder(){
     const uid=document.getElementById("target-uid").value.trim();
-    const price=parseFloat(document.getElementById("package-select").value);
+    const sel=document.getElementById("package-select");
+    const price=parseFloat(sel.value);
+    const pkgQty=parseInt(sel.selectedOptions[0]?.text?.match(/[\d,]+/)?.[0]?.replace(/,/g,"")||0);
     const btn=document.getElementById("order-btn");
     if(!uid) return alert("Masukkan UID!");
     btn.disabled=true;
@@ -471,18 +442,23 @@ async function executeOrder(){
         const {data:u,error}=await _sb.from("database panel").select("balance").eq("username",currentUser.username).single();
         if(error) throw error;
         if(parseFloat(u.balance)<price) throw new Error(`Kredit tidak cukup! Baki: $${parseFloat(u.balance).toFixed(2)}`);
+        setStatus("> MENGHANTAR REQUEST KE API...","#9ca3af");
         const result=await ffFetch(`${FF_LIKES_URL}?key=${_ak()}&uid=${uid}`);
-        if(!isOk(result)) throw new Error(result?.message||result?.msg||result?.error||JSON.stringify(result));
+        if(!isOk(result)) throw new Error(result?.message||result?.msg||result?.error||JSON.stringify(result).slice(0,150));
         if(result?.key_info) updateLimitBar(result.key_info);
-        const given=parseInt(result.LikesGivenByAPI??result.likes_given??0);
-        if(!given||given<=0) throw new Error("API berjaya tapi 0 likes diberikan. Cuba semula atau tukar UID.");
+        const rawGiven=parseInt(
+            result.LikesGivenByAPI??result.likes_given??result.likes??
+            result.Likes??result.given??result.count??result.total??
+            result.data?.likes??result.data?.given??-1
+        );
+        const given=rawGiven>0?rawGiven:pkgQty;
         const newBal=parseFloat((parseFloat(u.balance)-price).toFixed(2));
         await _sb.from("database panel").update({balance:newBal}).eq("username",currentUser.username);
         document.getElementById("balance-amt").innerText=newBal.toFixed(2);
         currentUser.balance=newBal;
         addLikes(given); addTodayOrder(); addUidLikes(uid,given);
         if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
-        setStatus(`> BERJAYA! +${given} likes diproses.`,"#4ade80");
+        setStatus(`> BERJAYA! +${given.toLocaleString()} likes diproses.`,"#4ade80");
         notifyOwner(`🔔 ORDER BARU!\n👤 User: ${currentUser.username.toUpperCase()}\n🎯 UID: ${uid}\n💜 Likes: +${given}\n💰 Harga: $${price.toFixed(2)}\n💳 Baki: $${newBal.toFixed(2)}`);
     } catch(e){ setStatus("> GAGAL: "+e.message,"#f87171"); }
     finally{ btn.disabled=false; }
@@ -518,20 +494,12 @@ async function lookupUser(){
         document.getElementById("mg-ubal").innerText=parseFloat(data.balance).toFixed(2);
         const badge=document.getElementById("mg-urank-badge");
         badge.innerText=rank;
-        const s=rankStyle(rank);
-        badge.style.background=s.bg; badge.style.color=s.color;
-        if(currentRank==="OWNER"){
-            document.getElementById("mg-rank-section").style.display="block";
-            document.getElementById("mg-new-rank").value=(rank==="BANNED"?"MEMBER":rank);
-        }
+        const s=rankStyle(rank); badge.style.background=s.bg; badge.style.color=s.color;
+        if(currentRank==="OWNER"){ document.getElementById("mg-rank-section").style.display="block"; document.getElementById("mg-new-rank").value=(rank==="BANNED"?"MEMBER":rank); }
         const isBanned=rank==="BANNED";
         document.getElementById("mg-ban-btn").style.display=isBanned?"none":"block";
         document.getElementById("mg-unban-btn").style.display=isBanned?"block":"none";
-        if(currentRank==="RESELLER"){
-            document.getElementById("mg-ban-btn").style.display="none";
-            document.getElementById("mg-unban-btn").style.display="none";
-            mgStatus("⛔ Reseller tidak dibenarkan ban mana-mana akaun.","#f87171");
-        }
+        if(currentRank==="RESELLER"){ document.getElementById("mg-ban-btn").style.display="none"; document.getElementById("mg-unban-btn").style.display="none"; mgStatus("⛔ Reseller tidak dibenarkan ban mana-mana akaun.","#f87171"); }
         document.getElementById("mg-user-card").classList.remove("hidden");
         if(currentRank!=="RESELLER") mgStatus("","");
     } catch(e){ alert(e.message); }
@@ -550,8 +518,7 @@ async function changeRank(){
         mgTarget.rank=newRank;
         const badge=document.getElementById("mg-urank-badge");
         badge.innerText=newRank;
-        const s=rankStyle(newRank);
-        badge.style.background=s.bg; badge.style.color=s.color;
+        const s=rankStyle(newRank); badge.style.background=s.bg; badge.style.color=s.color;
         const isBanned=newRank==="BANNED";
         document.getElementById("mg-ban-btn").style.display=isBanned?"none":"block";
         document.getElementById("mg-unban-btn").style.display=isBanned?"block":"none";
@@ -571,8 +538,7 @@ async function banUser(){
         mgTarget.rank="BANNED";
         const badge=document.getElementById("mg-urank-badge");
         badge.innerText="BANNED";
-        const s=rankStyle("BANNED");
-        badge.style.background=s.bg; badge.style.color=s.color;
+        const s=rankStyle("BANNED"); badge.style.background=s.bg; badge.style.color=s.color;
         document.getElementById("mg-ban-btn").style.display="none";
         document.getElementById("mg-unban-btn").style.display="block";
         if(currentRank==="OWNER") document.getElementById("mg-new-rank").value="MEMBER";
@@ -590,8 +556,7 @@ async function unbanUser(){
         mgTarget.rank="MEMBER";
         const badge=document.getElementById("mg-urank-badge");
         badge.innerText="MEMBER";
-        const s=rankStyle("MEMBER");
-        badge.style.background=s.bg; badge.style.color=s.color;
+        const s=rankStyle("MEMBER"); badge.style.background=s.bg; badge.style.color=s.color;
         document.getElementById("mg-ban-btn").style.display="block";
         document.getElementById("mg-unban-btn").style.display="none";
         document.getElementById("mg-new-rank").value="MEMBER";
