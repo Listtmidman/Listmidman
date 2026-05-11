@@ -437,11 +437,13 @@ async function checkId(){
         const data=await ffFetch(`${FF_NICKNAME_URL}?uid=${uid}`);
         const info=Array.isArray(data)?data[0]:data;
         const extra=Array.isArray(data)&&data[1]?data[1]:info;
-        if(!info?.nickname) throw new Error("UID tidak dijumpai");
-        document.getElementById("pi-nickname").innerText=info.nickname;
-        document.getElementById("pi-region").innerText=info.region||"N/A";
-        document.getElementById("pi-level").innerText=extra.level||"N/A";
-        document.getElementById("pi-likes").innerText=extra.likes!=null?Number(extra.likes).toLocaleString():"N/A";
+        const nick=info?.nickname||info?.PlayerNickname||info?.name||info?.player_name||extra?.nickname||extra?.PlayerNickname||null;
+        if(!nick) throw new Error("UID tidak dijumpai. Respons: "+JSON.stringify(data).slice(0,120));
+        document.getElementById("pi-nickname").innerText=nick;
+        document.getElementById("pi-region").innerText=info.region||info.Region||info.server||"N/A";
+        document.getElementById("pi-level").innerText=extra.level||extra.Level||info.level||"N/A";
+        const likesVal=extra.likes??extra.Likes??info.likes??info.Likes??null;
+        document.getElementById("pi-likes").innerText=likesVal!=null?Number(likesVal).toLocaleString():"N/A";
         if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
         document.getElementById("player-info").classList.remove("hidden");
     } catch(e){ alert("Ralat Check ID: "+e.message); }
@@ -457,7 +459,7 @@ async function checkApiLimit(){
     try{
         const result=await ffFetch(`${FF_LIKES_URL}?key=${_ak()}&uid=${uid}`);
         if(result?.key_info){ updateLimitBar(result.key_info); const ki=result.key_info; setStatus(`> Limit: ${ki.daily_usage}/${ki.daily_limit}/hari | Sisa: ${ki.daily_remaining}`,"#a78bfa"); }
-        else { setStatus("> key_info tiada.","#fbbf24"); }
+        else { setStatus("> key_info tiada. Respons: "+JSON.stringify(result).slice(0,100),"#fbbf24"); }
     } catch(e){ setStatus("> Gagal: "+e.message,"#f87171"); }
     finally{ btn.innerText="🔍 SEMAK LIMIT API"; btn.disabled=false; }
 }
