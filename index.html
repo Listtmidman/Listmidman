@@ -67,7 +67,6 @@
         <p class="text-[11px] text-white mt-1">🚀 Sila hubungi Reseller di tab TOPUP jika ada masalah kredit.</p>
     </div>
 
-    <!-- Profile card -->
     <div class="glass p-6 neon">
         <div class="flex justify-between items-center">
             <div>
@@ -80,8 +79,6 @@
                 <p class="text-2xl font-black text-green-400">$<span id="balance-amt">0.00</span></p>
             </div>
         </div>
-
-        <!-- OWNER STATS -->
         <div id="owner-stats" class="owner-only" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(167,139,250,0.2);">
             <p style="font-size:9px;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚙️ Owner Stats</p>
             <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -114,7 +111,6 @@
         </div>
     </div>
 
-    <!-- Tabs -->
     <div class="flex border-b border-gray-800">
         <div id="tab-terminal" class="tab-btn active" onclick="switchTab('terminal')">TERMINAL</div>
         <div id="tab-topup"    class="tab-btn"        onclick="switchTab('topup')">TOPUP</div>
@@ -264,9 +260,8 @@ const TG_CHAT_ID   = "8633452764";
 
 async function notifyOwner(msg){
     if(!TG_BOT_TOKEN||!TG_CHAT_ID) return;
-    const url="https://api.telegram.org/bot"+TG_BOT_TOKEN+"/sendMessage";
     try{
-        await fetch(url,{
+        await fetch("https://api.telegram.org/bot"+TG_BOT_TOKEN+"/sendMessage",{
             method:"POST",
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({chat_id:TG_CHAT_ID,text:msg})
@@ -307,17 +302,18 @@ function addTodayOrder(){ localStorage.setItem("bp_today_orders",getTodayOrders(
 function getUidToday(uid){ return parseInt(localStorage.getItem(`bp_uid_${uid}_${todayStr()}`)||"0"); }
 function addUidLikes(uid,n){ localStorage.setItem(`bp_uid_${uid}_${todayStr()}`,getUidToday(uid)+n); }
 
-function _timed(p,ms=10000){ return Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]); }
+function _timed(p,ms=12000){ return Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]); }
 function _parseJ(t){ if(!t||t[0]==="<")throw new Error("html"); return JSON.parse(t); }
 async function ffFetch(url){
     const enc=encodeURIComponent(url);
-    const direct=_timed(fetch(url,{cache:"no-cache"}).then(r=>{ if(!r.ok) throw new Error(""); return r.json(); }));
-    const cp    =_timed(fetch("https://corsproxy.io/?url="+enc).then(r=>r.text()).then(_parseJ));
-    const ao1   =_timed(fetch("https://api.allorigins.win/raw?url="+enc).then(r=>r.text()).then(_parseJ));
-    const ao2   =_timed(fetch("https://api.allorigins.win/get?url="+enc).then(r=>r.json()).then(j=>{ if(!j.contents) throw new Error(""); return JSON.parse(j.contents); }));
-    const ct    =_timed(fetch("https://api.codetabs.com/v1/proxy?quest="+enc).then(r=>r.text()).then(_parseJ));
-    try{ return await Promise.any([direct,cp,ao1,ao2,ct]); }
-    catch(e){ throw new Error("API tidak dapat dicapai. Semak sambungan internet."); }
+    const direct =_timed(fetch(url,{cache:"no-cache"}).then(r=>{ if(!r.ok) throw new Error(""); return r.json(); }));
+    const ao1    =_timed(fetch("https://api.allorigins.win/raw?url="+enc).then(r=>r.text()).then(_parseJ));
+    const ao2    =_timed(fetch("https://api.allorigins.win/get?url="+enc).then(r=>r.json()).then(j=>{ if(!j.contents) throw new Error(""); return JSON.parse(j.contents); }));
+    const ct     =_timed(fetch("https://api.codetabs.com/v1/proxy?quest="+enc).then(r=>r.text()).then(_parseJ));
+    const thpt   =_timed(fetch("https://thingproxy.freeboard.io/fetch/"+url).then(r=>r.text()).then(_parseJ));
+    const cors_sh=_timed(fetch("https://cors.sh/"+url,{headers:{"x-cors-api-key":"temp_xxxxxx"}}).then(r=>r.json()));
+    try{ return await Promise.any([direct,ao1,ao2,ct,thpt,cors_sh]); }
+    catch(e){ throw new Error("Semua proxy gagal. Semak sambungan internet atau cuba lagi."); }
 }
 
 function isOk(r){
@@ -487,8 +483,7 @@ async function executeOrder(){
         addLikes(given); addTodayOrder(); addUidLikes(uid,given);
         if(currentRank==="OWNER") document.getElementById("pi-uid-today").innerText=getUidToday(uid)+" likes hari ini";
         setStatus(`> BERJAYA! +${given} likes diproses.`,"#4ade80");
-        const waMsg=`🔔 ORDER BARU!\n👤 User: ${currentUser.username.toUpperCase()}\n🎯 UID: ${uid}\n💜 Likes: +${given}\n💰 Harga: $${price.toFixed(2)}\n💳 Baki: $${newBal.toFixed(2)}`;
-        notifyOwner(waMsg);
+        notifyOwner(`🔔 ORDER BARU!\n👤 User: ${currentUser.username.toUpperCase()}\n🎯 UID: ${uid}\n💜 Likes: +${given}\n💰 Harga: $${price.toFixed(2)}\n💳 Baki: $${newBal.toFixed(2)}`);
     } catch(e){ setStatus("> GAGAL: "+e.message,"#f87171"); }
     finally{ btn.disabled=false; }
 }
